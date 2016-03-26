@@ -63,4 +63,4 @@ Config::addArray([
     'debug' => true,
 ]);
 
-DB::set(DriverFactory::get());
+//DB::set(DriverFactory::get());

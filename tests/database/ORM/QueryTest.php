@@ -32,7 +32,7 @@ class QueryTest extends PHPUnit_Framework_TestCase
      */
     public function testConstruct()
     {
-        $this->expectException(IncorrectQueryException::class);
+        $this->setExpectedException(IncorrectQueryException::class);
         $query = new Query();
         $query->getParams();
     }
@@ -43,7 +43,7 @@ class QueryTest extends PHPUnit_Framework_TestCase
      */
     public function testInvalidSelect()
     {
-        $this->expectException(IncorrectQueryException::class);
+        $this->setExpectedException(IncorrectQueryException::class);
         $query = new Query();
         $query->select();
         $query->getParams();
@@ -55,7 +55,7 @@ class QueryTest extends PHPUnit_Framework_TestCase
      */
     public function testIncorrectSelect()
     {
-        $this->expectException(IncorrectQueryException::class);
+        $this->setExpectedException(IncorrectQueryException::class);
         $query = new Query();
         $query->select($query);
         $query->getParams();
@@ -67,7 +67,7 @@ class QueryTest extends PHPUnit_Framework_TestCase
      */
     public function testDuplicateSelect()
     {
-        $this->expectException(IncorrectQueryException::class);
+        $this->setExpectedException(IncorrectQueryException::class);
         $query = new Query();
         $query->select()->select();
         $query->getParams();
@@ -109,7 +109,7 @@ class QueryTest extends PHPUnit_Framework_TestCase
      */
     public function testInvalidFrom()
     {
-        $this->expectException(IncorrectQueryException::class);
+        $this->setExpectedException(IncorrectQueryException::class);
         $query = new Query();
         $query->from('articles')
             ->getParams();
@@ -143,7 +143,7 @@ class QueryTest extends PHPUnit_Framework_TestCase
      */
     public function testEmptyWhere()
     {
-        $this->expectException(IncorrectQueryException::class);
+        $this->setExpectedException(IncorrectQueryException::class);
         $query = new Query();
         $query->select()->from('articles')->where();
     }
@@ -154,7 +154,7 @@ class QueryTest extends PHPUnit_Framework_TestCase
      */
     public function testInvalidWhere()
     {
-        $this->expectException(IncorrectQueryException::class);
+        $this->setExpectedException(IncorrectQueryException::class);
         $query = new Query();
         $query->where();
     }
