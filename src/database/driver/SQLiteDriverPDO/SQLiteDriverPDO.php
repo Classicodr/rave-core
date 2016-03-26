@@ -29,9 +29,10 @@ class SQLiteDriverPDO implements GenericDriver
 {
     private $instance;
 
-    public function __construct(PDO $pdo)
+    public function __construct(array $info)
     {
-        $this->instance = $pdo;
+        $this->instance = new PDO('sqlite:' . $info['path']);
+        $this->instance->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);;
     }
 
     /**

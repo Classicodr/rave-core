@@ -47,6 +47,17 @@ class Config
     }
 
     /**
+     * Returns the datasource
+     *
+     * @param $source_name string name of the datasource
+     * @return array|string Properties of the datasource
+     */
+    public static function getDatasources($source_name)
+    {
+        return self::get('datasources')[$source_name];
+    }
+
+    /**
      * Returns the configurated value, null otherwise
      *
      * @param $option string configuration to get
@@ -60,6 +71,17 @@ class Config
         }
 
         return isset(self::$_container[$option]) ? self::$_container[$option] : null;
+    }
+
+    /**
+     * Returns the default error file
+     *
+     * @param $error_type string name of error
+     * @return string path to the error file
+     */
+    public static function getError($error_type)
+    {
+        return self::get('error')[$error_type];
     }
 
 }

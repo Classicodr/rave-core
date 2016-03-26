@@ -25,7 +25,7 @@ use rave\core\database\driver\GenericDriver;
 use rave\core\database\ORM\Query;
 use rave\core\Error;
 
-class MySQLDriverPDO implements GenericDriver
+class PostgreSQLDriverPDO implements GenericDriver
 {
     private $instance;
 
@@ -34,7 +34,7 @@ class MySQLDriverPDO implements GenericDriver
         $port = isset($info['port']) ? ';port=' . $info['port'] : null;
 
         $this->instance =
-            new PDO('mysql:dbname=' . $info['database'] . ';host=' . $info['host'] . $port,
+            new PDO('pgsql:dbname=' . $info['database'] . ';host=' . $info['host'] . $port,
                 $info['login'], $info['password'],
                 [PDO::MYSQL_ATTR_INIT_COMMAND => 'SET NAMES utf8']);
         $this->instance->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);;
