@@ -17,30 +17,32 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-namespace rave\tests\app\entity;
+/**
+ * Created by PhpStorm.
+ * User: stardisblue
+ * Date: 26/03/16
+ * Time: 16:40
+ */
 
-use rave\core\database\ORM\Entity;
+namespace rave\core;
 
-class ArticlesEntity extends Entity
+
+use rave\core\database\driver\GenericDriver;
+
+class Database
 {
-    public function __construct()
+    private static $database_object;
+
+    public static function set(GenericDriver $generic_driver)
     {
-        $properties = [
-            'id' => null,
-            'user_id' => null,
-            'title' => '',
-            'content' => '',
-            'date_creation' => null,
-        ];
+        self::$database_object = $generic_driver;
+    }
 
-        $options = [
-            'primary' => 'id',
-            'belongs_to' => [
-                'table' => 'users',
-                'foreign_key' => 'user_id',
-            ]
-        ];
-
-        parent::__construct($properties, $options);
+    /**
+     * @return GenericDriver
+     */
+    public static function get()
+    {
+        return self::$database_object;
     }
 }

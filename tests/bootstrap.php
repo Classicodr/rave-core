@@ -18,8 +18,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 use rave\core\Config;
+use rave\core\Database;
 use rave\core\database\DriverFactory;
-use rave\core\database\ORM\Model;
 
 /**
  * Some useful constants
@@ -40,7 +40,7 @@ if ($webRoot === '/') {
 
 require_once ROOT . '/../vendor/autoload.php';
 
-Config::writeArray([
+Config::addArray([
     'database' => [
         'driver' => DriverFactory::MYSQL_PDO,
         'host' => 'localhost',
@@ -62,5 +62,3 @@ Config::writeArray([
     ],
     'debug' => true,
 ]);
-
-Model::useDatabase('database');

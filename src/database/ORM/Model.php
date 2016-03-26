@@ -19,8 +19,7 @@
 
 namespace rave\core\database\ORM;
 
-use rave\core\database\driver\GenericDriver;
-use rave\core\database\DriverFactory;
+use rave\core\Database;
 use rave\core\exception\EntityException;
 use rave\core\exception\IncorrectQueryException;
 use rave\core\exception\UnknownPropertyException;
@@ -35,16 +34,8 @@ abstract class Model
     protected static $primary = 'id';
     protected static $entity_name;
 
-    /**@var GenericDriver $driver */
-    private static $driver;
-
     /** @var Query $query */
     private $query;
-
-    public static function useDatabase($db_name = 'database')
-    {
-        self::$driver = DriverFactory::get($db_name);
-    }
 
     /**
      * @return string <p>the name of the table associated to the model</p>
@@ -95,7 +86,7 @@ abstract class Model
      */
     public function lastInsertId()
     {
-        return self::$driver->lastInsertId();
+        return Database::get()->lastInsertId();
     }
 
     /**
@@ -129,7 +120,7 @@ abstract class Model
                 'values' => [':' . static::$primary => $entity->get(static::$primary)]
             ]);
 
-        self::$driver->query($this->query);
+        Database::get()->query($this->query);
     }
 
     /**
@@ -144,7 +135,7 @@ abstract class Model
             ->insertInto(static::$table)
             ->values($entity);
 
-        self::$driver->query($this->query);
+        Database::get()->query($this->query);
     }
 
 
@@ -163,7 +154,7 @@ abstract class Model
             ->from(static::$table)
             ->where(['conditions' => static::$primary . ' = :' . static::$primary, 'values' => [':' . static::$primary => $entity->get(static::$primary)]]);
 
-        self::$driver->execute($this->query);
+        Database::get()->execute($this->query);
     }
 
     /**
@@ -189,7 +180,7 @@ abstract class Model
             ->where(['conditions' => static::$primary . ' = :primary',
                 'values' => [':primary' => $primary]]);
 
-        return self::$driver->queryOne($this->query, $entity_name);
+        return Database::get()->queryOne($this->query, $entity_name);
     }
 
     /**
@@ -206,7 +197,7 @@ abstract class Model
             throw new IncorrectQueryException('The query is incorrect');
         }
 
-        return self::$driver->queryOne($this->query);
+        return Database::get()->queryOne($this->query);
     }
 
     /**
@@ -256,7 +247,7 @@ abstract class Model
                 $this->query->appendSQL($options['append']);
             }
 
-            return self::$driver->query($this->query);
+            return Database::get()->query($this->query);
         } elseif ('all' === $options || !isset($this->query) && null === $options) {
 
             $entity_name = isset(static::$entity_name) ? static::$entity_name : str_replace('model', 'entity', str_replace('Model', 'Entity', static::class));
@@ -269,11 +260,11 @@ abstract class Model
                 ->select()
                 ->from(static::$table);
 
-            return self::$driver->query($this->query, $entity_name);
+            return Database::get()->query($this->query, $entity_name);
         } elseif (isset($this->query)) {
-            return self::$driver->query($this->query);
+            return Database::get()->query($this->query);
         } elseif ('first' === $options) {
-            return self::$driver->queryOne($this->query);
+            return Database::get()->queryOne($this->query);
 
         }
 

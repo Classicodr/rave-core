@@ -45,25 +45,20 @@ class DriverFactory
     {
         $database = Config::get($dbname);
 
+        try {
+            $pdo = new PDO('mysql:dbname=' . $database['name'] . ';host=' . $database['host'], $database['login'], $database['password'], [PDO::MYSQL_ATTR_INIT_COMMAND => 'SET NAMES utf8']);
+            $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
-        if ($database) {
-            try {
-                $pdo = new PDO('mysql:dbname=' . $database['name'] . ';host=' . $database['host'], $database['login'], $database['password'], [PDO::MYSQL_ATTR_INIT_COMMAND => 'SET NAMES utf8']);
-                $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-
-                switch ($database['driver']) {
-                    case self::MYSQL_PDO:
-                        return new MySQLDriverPDO($pdo);
-                    case self::SQLITE_PDO:
-                        return new SQLiteDriverPDO($pdo);
-                    default:
-                        throw new UnknownDriverException('Driver ' . $database['driver'] . ' does not exists');
-                }
-            } catch (PDOException $pdoException) {
-                Error::create($pdoException->getMessage(), 500);
+            switch ($database['driver']) {
+                case self::MYSQL_PDO:
+                    return new MySQLDriverPDO($pdo);
+                case self::SQLITE_PDO:
+                    return new SQLiteDriverPDO($pdo);
+                default:
+                    throw new UnknownDriverException('Driver ' . $database['driver'] . ' does not exists');
             }
-        } else {
-            Error::create('the database is not configured');
+        } catch (PDOException $pdoException) {
+            Error::create($pdoException->getMessage(), 500);
         }
     }
 

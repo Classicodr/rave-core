@@ -23,16 +23,16 @@ use rave\core\exception\UnknownPropertyException;
 
 class Config
 {
-    private static $_options = [];
+    private static $_container = [];
 
     /**
      * Adds an array to the config
      *
      * @param array $options
      */
-    public static function writeArray(array $options)
+    public static function addArray(array $options)
     {
-        self::$_options = array_merge(self::$_options, $options);
+        self::$_container = array_merge(self::$_container, $options);
     }
 
     /**
@@ -41,9 +41,9 @@ class Config
      * @param $key string
      * @param $value mixed
      */
-    public static function write($key, $value)
+    public static function add($key, $value)
     {
-        self::$_options[$key] = $value;
+        self::$_container[$key] = $value;
     }
 
     /**
@@ -56,10 +56,10 @@ class Config
     public static function get($option)
     {
         if (!is_string($option)) {
-            throw new UnknownPropertyException('the option is not as string');
+            throw new UnknownPropertyException('the key is not as string');
         }
 
-        return isset(self::$_options[$option]) ? self::$_options[$option] : null;
+        return isset(self::$_container[$option]) ? self::$_container[$option] : null;
     }
 
 }

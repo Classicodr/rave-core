@@ -22,7 +22,7 @@ namespace rave\tests\core\database\ORM;
 use PHPUnit_Framework_TestCase;
 use rave\core\database\ORM\Query;
 use rave\core\exception\IncorrectQueryException;
-use rave\tests\app\Entity\ArticlesEntity;
+use rave\tests\app\entity\ArticlesEntity;
 use rave\tests\app\model\ArticlesModel;
 
 class QueryTest extends PHPUnit_Framework_TestCase
