@@ -1,0 +1,31 @@
+{
+  "name": "classicodr/rave-core",
+  "description": "Rave framework",
+  "type": "library",
+  "keywords": ["framework"],
+  "license": "GNU GPLv3",
+  "authors": [
+    {
+      "name": "KaiserCoder"
+    },
+    {
+      "name": "Stardisblue"
+    }
+  ],
+  "require": {
+    "php": ">=5.5.9"
+  },
+  "require-dev": {
+    "phpunit/phpunit": "*"
+  },
+  "autoload": {
+    "psr-4": {
+      "rave\\core\\": "src/"
+    }
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "rave\\tests\\": "tests/"
+    }
+  }
+}
