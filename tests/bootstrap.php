@@ -18,8 +18,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 use rave\core\Config;
-use rave\core\Database;
 use rave\core\database\DriverFactory;
+use rave\core\DB;
 
 /**
  * Some useful constants
@@ -62,3 +62,5 @@ Config::addArray([
     ],
     'debug' => true,
 ]);
+
+DB::set(DriverFactory::get());

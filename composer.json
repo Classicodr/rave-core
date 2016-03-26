@@ -1,8 +1,8 @@
 {
-  "name": "ClassicCodr/rave-core",
-  "description": "Core of the rave Framework",
+  "name": "classicodr/rave-core",
+  "description": "Core of the Rave Framework",
   "minimum-stability": "stable",
-  "license": "GNU GPLv4",
+  "license": "GNU GPLv3",
   "authors": [
     {
       "name": "KaiserCoder"
@@ -11,6 +11,9 @@
       "name": "Stardisblue"
     }
   ],
+  "require": {
+    "php": ">=5.5"
+  },
   "require-dev": {
     "phpunit/phpunit": "^5.2"
   },

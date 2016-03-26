@@ -29,7 +29,7 @@ namespace rave\core;
 
 use rave\core\database\driver\GenericDriver;
 
-class Database
+class DB
 {
     private static $database_object;
 

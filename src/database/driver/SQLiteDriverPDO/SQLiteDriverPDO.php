@@ -101,7 +101,7 @@ class SQLiteDriverPDO implements GenericDriver
     public function execute(Query $query)
     {
         try {
-            $sql = $this->getInstance()->prepare($query->getStatement());
+            $sql = $this->instance->prepare($query->getStatement());
             $sql->execute($query->getValues());
         } catch (PDOException $pdoException) {
             Error::create($pdoException->getMessage(), 500);

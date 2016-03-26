@@ -85,7 +85,7 @@ class Route
             }
 
             $controller->beforeCall($method);
-            $result = call_user_func_array($controller->$method, $this->matches);
+            $result = call_user_func_array([$controller, $method], $this->matches);
             $controller->afterCall($method);
 
             return $result;
