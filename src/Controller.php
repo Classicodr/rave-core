@@ -69,7 +69,7 @@ abstract class Controller
 
         $controller = explode('\\', __CLASS__);
 
-        $file = ROOT . '/app/view/' . strtolower(end($controller)) . '/' . $view . '.php';
+        $file = APP . '/view/' . strtolower(end($controller)) . '/' . $view . '.php';
 
         ob_start();
 
@@ -85,7 +85,7 @@ abstract class Controller
         if (!$this->layout) {
             echo $content;
         } else {
-            include_once ROOT . '/app/view/layout/' . $this->layout . '.php';
+            include_once APP . 'view/layout/' . $this->layout . '.php';
         }
     }
 
@@ -162,7 +162,7 @@ abstract class Controller
     protected function setLayout($layout, array $data = [])
     {
         $this->data = $data;
-        $this->layout = file_exists(ROOT . '/app/view/layout/' . $layout . '.php') ? $layout : false;
+        $this->layout = file_exists(APP . 'view/layout/' . $layout . '.php') ? $layout : false;
     }
 
 }

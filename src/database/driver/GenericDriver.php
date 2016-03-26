@@ -21,6 +21,13 @@ namespace rave\core\database\driver;
 
 use rave\core\database\ORM\Query;
 
+/**
+ * Interface GenericDriver
+ *
+ * Allows to connect different datasources
+ *
+ * @package rave\core\database\driver
+ */
 interface GenericDriver
 {
 
