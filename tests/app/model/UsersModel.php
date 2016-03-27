@@ -17,30 +17,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-namespace rave\tests\app\entity;
+namespace rave\tests\app\model;
 
-use rave\core\database\orm\Entity;
+use rave\core\database\orm\Model;
 
-class ArticlesEntity extends Entity
+class UsersModel extends Model
 {
-    public function __construct()
-    {
-        $properties = [
-            'id'            => null,
-            'user_id'       => null,
-            'title'         => '',
-            'content'       => '',
-            'date_creation' => null,
-        ];
-
-        $options = [
-            'primary'    => 'id',
-            'belongs_to' => [
-                'table'       => 'users',
-                'foreign_key' => 'user_id',
-            ]
-        ];
-
-        parent::__construct($properties, $options);
-    }
+    protected static $table = 'users';
 }

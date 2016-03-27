@@ -42,31 +42,32 @@ require_once ROOT . '/vendor/autoload.php';
  * Include the autoloader
  */
 
+Config::addArray(
+    [
+        'debug' => true,
 
-Config::addArray([
-    'debug' => true,
-    'datasources' => [
-        'test' => [
-            'driver' => DriverFactory::MYSQL_PDO,
-            'host' => 'localhost',
-            'database' => 'test',
-            'login' => 'root',
-            'password' => ''
+        'datasources' => [
+            'test' => [
+                'driver'   => DriverFactory::MYSQL_PDO,
+                'host'     => 'localhost',
+                'database' => 'test',
+                'login'    => 'root',
+                'password' => ''
+            ],
         ],
-    ],
 
-    'error' => [
-        '500' => '/internal-server-error',
-        '404' => '/not-found',
-        '403' => '/forbidden'
-    ],
+        'error' => [
+            '500' => '/internal-server-error',
+            '404' => '/not-found',
+            '403' => '/forbidden'
+        ],
 
-    'encryption' => [
-        'mode' => MCRYPT_MODE_CBC,
-        'cypher' => MCRYPT_RIJNDAEL_256,
-        'iv' => 'CHANGEME', //TODO
-        'key' => 'CHANGEME', //TODO
-    ]
-]);
+        'encryption' => [
+            'mode'   => MCRYPT_MODE_CBC,
+            'cypher' => MCRYPT_RIJNDAEL_256,
+            'iv'     => 'CHANGEME', //TODO
+            'key'    => 'CHANGEME', //TODO
+        ]
+    ]);
 
 DB::set(DriverFactory::get('test'));

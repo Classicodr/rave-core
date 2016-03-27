@@ -17,30 +17,15 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-namespace rave\tests\app\entity;
+namespace rave\tests\database\orm;
 
-use rave\core\database\orm\Entity;
+use rave\tests\app\model\ArticlesModel;
 
-class ArticlesEntity extends Entity
+class ModelTest extends \PHPUnit_Framework_TestCase
 {
-    public function __construct()
+
+    public function testConstructor()
     {
-        $properties = [
-            'id'            => null,
-            'user_id'       => null,
-            'title'         => '',
-            'content'       => '',
-            'date_creation' => null,
-        ];
-
-        $options = [
-            'primary'    => 'id',
-            'belongs_to' => [
-                'table'       => 'users',
-                'foreign_key' => 'user_id',
-            ]
-        ];
-
-        parent::__construct($properties, $options);
+        $model = new ArticlesModel();
     }
 }

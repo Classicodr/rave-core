@@ -17,11 +17,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-
 namespace rave\tests\app\model;
 
-
-use rave\core\database\ORM\Model;
+use rave\core\database\orm\Model;
 
 class ArticlesModel extends Model
 {
