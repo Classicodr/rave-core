@@ -29,17 +29,27 @@ namespace rave\core;
 
 use rave\core\database\driver\GenericDriver;
 
+/**
+ * Class DB
+ * @package rave\core
+ */
 class DB
 {
+    /**
+     * @var GenericDriver $database_object Genericdriver object used
+     */
     private static $database_object;
 
+    /**
+     * @param GenericDriver $generic_driver
+     */
     public static function set(GenericDriver $generic_driver)
     {
         self::$database_object = $generic_driver;
     }
 
     /**
-     * @return GenericDriver
+     * @return GenericDriver The generic driver set
      */
     public static function get()
     {

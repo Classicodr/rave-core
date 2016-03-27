@@ -84,12 +84,12 @@ class QueryTest extends PHPUnit_Framework_TestCase
             ['statement' => 'SELECT * FROM articles ']);
 
         $query = new Query();
+        $query->select(['id', 'title'])
+            ->from('articles')
+            ->where(['conditions' => 'id = :id', 'values' => [':id' => 2]]);
 
         $this->assertEquals(
-            $query->select(['id', 'title'])
-                ->from('articles')
-                ->where(['conditions' => 'id = :id', 'values' => [':id' => 2]])
-                ->getParams(),
+            $query->getParams(),
             ['statement' => 'SELECT id, title FROM articles WHERE id = :id ', 'values' => [':id' => 2]]);
 
         $query = new Query();
@@ -171,13 +171,11 @@ class QueryTest extends PHPUnit_Framework_TestCase
         $entity->id = 1;
 
         $query->update('articles')->set($entity)->where(['conditions' => ['id', '=', 2]]);
-        $this->assertEquals($query->getParams(), ['statement' => 'UPDATE articles SET id = :id, user_id = :user_id, title = :title, content = :content, date_creation = :date_creation WHERE id = :id0 ',
-            'values' => ['id' => 1,
-                'user_id' => null,
-                'title' => 'Titre',
-                'content' => '',
-                'date_creation' => null,
-                'id0' => 2]
+        $this->assertEquals($query->getParams(), ['statement' => 'UPDATE articles SET id = :id, title = :title, content = :content WHERE id = :id0 ',
+            'values' => [':id' => 1,
+                ':title' => 'Titre',
+                ':content' => '',
+                ':id0' => 2]
         ]);
 
         $query = new Query();
@@ -204,8 +202,8 @@ class QueryTest extends PHPUnit_Framework_TestCase
             [
                 'statement' =>
                     'SELECT * FROM articles WHERE (id = :id AND title = :title AND (id = :id0 OR id = :id1 OR id = :id2)) ',
-                'values' => ['id' => 2,
-                    'title' => 'salut les geeks', 'id0' => 3, 'id1' => 4, 'id2' => 5]
+                'values' => [':id' => 2,
+                    ':title' => 'salut les geeks', ':id0' => 3, ':id1' => 4, ':id2' => 5]
             ]
         );
     }

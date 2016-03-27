@@ -53,8 +53,6 @@ interface GenericDriver
      * Executes the query without waiting for the result
      *
      * @param Query $query
-     * @return array result of the query
-     *
      */
     public function execute(Query $query);
 

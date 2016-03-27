@@ -31,10 +31,21 @@ abstract class Model
     const DRIVER = 'driver';
 
     protected static $table;
+
+    /**
+     * @var string $primary the primary key of the table
+     * @deprecated
+     * @see Entity
+     */
     protected static $primary = 'id';
+
     protected static $entity_name;
 
-    /** @var Query $query */
+    /**
+     * @var Query $query
+     * @deprecated
+     * @see Query
+     */
     private $query;
 
     /**
@@ -75,9 +86,7 @@ abstract class Model
      */
     public function newQuery()
     {
-        $this->query = new Query();
-
-        return $this->query;
+        new Query();
     }
 
     /**
@@ -92,15 +101,27 @@ abstract class Model
     /**
      * Saves the entity (add if not exists or updates it)
      *
+     * If the Entity has multiple primary keys, only update will work
+     *
      * @param Entity $entity
+     * @throws EntityException if there is a undefined multiple primary key
      */
     public function save(Entity $entity)
     {
-        if (isset($entity->{static::$primary})) { //si l'entité existe
+        if (is_string($entity->getPrimaryKeys())) { //si l'entité existe
+            $this->update($entity);
+        } elseif (is_array($entity->getPrimaryKeys())) {
+            foreach ($entity->getPrimaryKeys() as $primary_key) {
+                if (!isset($entity->$primary_key)) {
+                    throw new EntityException('Cannot add an multiple primary key entity');
+                }
+            }
+
             $this->update($entity);
         } else {
             $this->add($entity);
         }
+
     }
 
     /**
@@ -112,15 +133,26 @@ abstract class Model
      */
     public function update(Entity $entity)
     {
+        $primaries = $entity->getPrimaryKeys();
+        $conditions = '';
+        if (is_string($primaries)) {
+            $conditions = [$primaries, '=', $entity->$primaries];
+        } else if (is_array($primaries)) {
+            foreach ($entity->getPrimaryKeys() as $primary_key) {
+                $conditions['AND'][] = [$primary_key, '=', $entity->$primary_key];
+            }
+        } else {
+            throw new UnknownPropertyException('Incorrect primary key setup');
+        }
+
+
         $this->newQuery()
             ->update(static::$table)
             ->set($entity)
             ->where([
-                'conditions' => static::$primary . ' = :' . static::$primary,
-                'values' => [':' . static::$primary => $entity->get(static::$primary)]
-            ]);
-
-        DB::get()->query($this->query);
+                'conditions' => $conditions,
+            ])
+            ->execute();
     }
 
     /**
@@ -133,9 +165,8 @@ abstract class Model
     {
         $this->newQuery()
             ->insertInto(static::$table)
-            ->values($entity);
-
-        DB::get()->query($this->query);
+            ->values($entity)
+            ->execute();
     }
 
 
@@ -149,18 +180,38 @@ abstract class Model
      */
     public function delete(Entity $entity)
     {
+        $primaries = $entity->getPrimaryKeys();
+        $conditions = '';
+
+        if (is_string($primaries)) {
+            $conditions = [$primaries, '=', $entity->$primaries];
+        } else if (is_array($primaries)) {
+            foreach ($entity->getPrimaryKeys() as $primary_key) {
+                $conditions['AND'][] = [$primary_key, '=', $entity->$primary_key];
+            }
+        } else {
+            throw new UnknownPropertyException('Incorrect primary key setup');
+        }
+
         $this->newQuery()
             ->delete()
             ->from(static::$table)
-            ->where(['conditions' => static::$primary . ' = :' . static::$primary, 'values' => [':' . static::$primary => $entity->get(static::$primary)]]);
-
-        DB::get()->execute($this->query);
+            ->where(['conditions' => $conditions])
+            ->execute();
     }
 
     /**
-     * Gets the entity
+     * Gets the entity (use an array : `['id'=> $value]`)
      *
-     * @param $primary
+     * in case of multiple primary keys use :
+     * ```
+     *  [
+     *      ['id_name' => $value_name],
+     *      ['id_title' => $value_title]
+     *  ];
+     * ```
+     *
+     * @param string|array $primary primar(y|ies) key(s)
      * @return mixed
      * @throws EntityException
      * @throws IncorrectQueryException
@@ -173,102 +224,30 @@ abstract class Model
         if (!class_exists($entity_name)) {
             throw new EntityException('There is no matching entity ' . $entity_name . 'for this model' . static::class);
         }
+        $statement = [];
 
-        $this->newQuery()
+        foreach ($primary as $index => $item) {
+            $statement['AND'][] = [$index, '=', $item];
+        }
+
+
+        $query = $this->newQuery()
             ->select()
             ->from(static::$table)
-            ->where(['conditions' => static::$primary . ' = :primary',
-                'values' => [':primary' => $primary]]);
+            ->where(['conditions' => $statement]);
 
-        return DB::get()->queryOne($this->query, $entity_name);
+        return DB::get()->queryOne($query, $entity_name);
     }
 
-    /**
-     * Return the first matching value of the query
-     *
-     * @see queryOne()
-     * @see find('first')
-     * @return mixed
-     * @throws IncorrectQueryException
-     */
-    public function first()
+    public function getAll()
     {
-        if (is_null($this->query)) {
-            throw new IncorrectQueryException('The query is incorrect');
-        }
+        $query = $this->newQuery()
+            ->select()
+            ->from(static::$table);
 
-        return DB::get()->queryOne($this->query);
+        $entity_name = isset(static::$entity_name) ? static::$entity_name
+            : str_replace('model', 'entity', str_replace('Model', 'Entity', static::class));
+
+        return DB::get()->queryOne($query, $entity_name);
     }
-
-    /**
-     * Executes the query
-     *
-     *<p>
-     * Can either be :
-     * <ul>
-     * <li>a string :
-     *  <ul>
-     *      <li>'all' `SELECT * ` from the current table</li>
-     *      <li>'first' select first matching element</li>
-     *  </ul>
-     * </li>
-     * <li>an array :
-     * <code>
-     *  ['select' => ['id', 'title'],
-     *      'from' =>
-     *          ['articles', new BlogModel()],
-     *      'where' =>
-     *          [
-     *              'conditions' => 'id = :id',
-     *              'values' => [':id' => 2]
-     *          ],
-     *      'append' => 'GROUP BY id'
-     *  ]
-     * </code>
-     * </li>
-     * <ul></p>
-     *
-     * @see GenericDriver::queryOne()
-     * @param string|array|null $options [optional]
-     * @return mixed
-     *
-     * @throws EntityException
-     * @throws IncorrectQueryException if the query is not correct
-     */
-    public function find($options = null)
-    {
-        if (is_array($options)) {
-            $this->newQuery()
-                ->select($options['select'])
-                ->from($options['from'])
-                ->where($options['where']);
-
-            if (isset($options['append'])) {
-                $this->query->appendSQL($options['append']);
-            }
-
-            return DB::get()->query($this->query);
-        } elseif ('all' === $options || !isset($this->query) && null === $options) {
-
-            $entity_name = isset(static::$entity_name) ? static::$entity_name : str_replace('model', 'entity', str_replace('Model', 'Entity', static::class));
-
-            if (!class_exists($entity_name)) {
-                throw new EntityException('There is no matching entity ' . $entity_name . 'for this model' . static::class);
-            }
-
-            $this->newQuery()
-                ->select()
-                ->from(static::$table);
-
-            return DB::get()->query($this->query, $entity_name);
-        } elseif (isset($this->query)) {
-            return DB::get()->query($this->query);
-        } elseif ('first' === $options) {
-            return DB::get()->queryOne($this->query);
-
-        }
-
-        throw new IncorrectQueryException('The query is incorrect');
-    }
-
 }
