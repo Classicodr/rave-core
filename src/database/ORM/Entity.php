@@ -86,6 +86,15 @@ abstract class Entity
     }
 
     /**
+     * Returns the set of primary keys
+     * @return string|array|null
+     */
+    public function getPrimaryKeys()
+    {
+        return isset($this->options['primary']) ? $this->options['primary'] : null;
+    }
+
+    /**
      * Return the value of the wanted option
      * return null if the option doesn't exist
      *
