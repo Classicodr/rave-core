@@ -23,7 +23,6 @@ use rave\core\database\orm\Query;
 
 /**
  * Interface GenericDriver
- *
  * Allows to connect different datasources
  *
  * @package rave\core\database\driver
@@ -36,8 +35,7 @@ interface GenericDriver
      *
      * @param Query $query
      * @param string $entity
-     *
-     * @return array result of the query
+     * @return array|null result of the query
      */
     public function query(Query $query, $entity = null);
 
@@ -46,7 +44,6 @@ interface GenericDriver
      *
      * @param Query $query
      * @param string $entity
-     *
      * @return mixed result of the query
      */
     public function queryOne(Query $query, $entity = null);

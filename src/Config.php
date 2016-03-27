@@ -50,7 +50,6 @@ class Config
      * Returns the datasource
      *
      * @param $source_name string name of the datasource
-     *
      * @return array|string Properties of the datasource
      */
     public static function getDatasources($source_name)
@@ -62,7 +61,6 @@ class Config
      * Returns the configurated value, null otherwise
      *
      * @param $option string configuration to get
-     *
      * @return mixed|null
      * @throws UnknownPropertyException if $option is not a string
      */
@@ -79,7 +77,6 @@ class Config
      * Returns the default error file
      *
      * @param $error_type string name of error
-     *
      * @return string path to the error file
      */
     public static function getError($error_type)

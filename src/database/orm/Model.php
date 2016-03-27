@@ -44,7 +44,6 @@ abstract class Model
 
     /**
      * Prepare the given query, to execute it, use either find() or first()
-     *
      * usage:
      * ```
      * $model->query("SELECT * FROM example",[':id' => 2])
@@ -53,9 +52,7 @@ abstract class Model
      *
      * @param string $statement SQL statement
      * @param array $values [optional]
-     *
      * PDO SQL injection security
-     *
      * @return Model
      * @deprecated use newQuery() instead
      * @see newQuery()
@@ -67,7 +64,6 @@ abstract class Model
 
     /**
      * Returns a new Query Object
-     *
      * Can be used for directly define the query :
      * ```
      * newQuery("SELECT * FROM example WHERE id = :id",[':id' => 2 ])
@@ -75,7 +71,6 @@ abstract class Model
      *
      * @param null $statement
      * @param array $values
-     *
      * @return Query
      */
     public function newQuery($statement = null, array $values = null)
@@ -85,6 +80,7 @@ abstract class Model
 
     /**
      * Get the last inserted ID
+     *
      * @return string
      */
     public function lastInsertId()
@@ -94,11 +90,9 @@ abstract class Model
 
     /**
      * Saves the entity (add if not exists or updates it)
-     *
      * If the Entity has multiple primary keys, only update will work
      *
      * @param Entity $entity
-     *
      * @throws EntityException if there is a undefined multiple primary key
      */
     public function save(Entity $entity)
@@ -123,7 +117,6 @@ abstract class Model
      * Updates the entity
      *
      * @param Entity $entity
-     *
      * @throws IncorrectQueryException
      * @throws UnknownPropertyException
      */
@@ -147,8 +140,8 @@ abstract class Model
              ->update(static::$table)
              ->set($entity)
              ->where([
-                         'conditions' => $conditions,
-                     ])
+                 'conditions' => $conditions,
+             ])
              ->execute();
     }
 
@@ -156,7 +149,6 @@ abstract class Model
      * Adds the entity
      *
      * @param Entity $entity
-     *
      * @throws IncorrectQueryException
      */
     public function add(Entity $entity)
@@ -170,9 +162,7 @@ abstract class Model
     /**
      * Deletes the entity
      *
-     *
      * @param Entity $entity
-     *
      * @throws IncorrectQueryException
      * @throws UnknownPropertyException
      */
@@ -202,7 +192,6 @@ abstract class Model
 
     /**
      * Gets the entity (use an array : `['id'=> $value]`)
-     *
      * in case of multiple primary keys use :
      * ```
      *  [
@@ -212,7 +201,6 @@ abstract class Model
      * ```
      *
      * @param string|array $primary primar(y|ies) key(s)
-     *
      * @return mixed
      * @throws EntityException
      * @throws IncorrectQueryException

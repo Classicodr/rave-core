@@ -26,17 +26,17 @@ class ArticlesEntity extends Entity
     public function __construct()
     {
         $properties = [
-            'id'            => null,
-            'user_id'       => null,
-            'title'         => '',
-            'content'       => '',
+            'id' => null,
+            'user_id' => null,
+            'title' => '',
+            'content' => '',
             'date_creation' => null,
         ];
 
         $options = [
-            'primary'    => 'id',
+            'primary' => 'id',
             'belongs_to' => [
-                'table'       => 'users',
+                'table' => 'users',
                 'foreign_key' => 'user_id',
             ]
         ];

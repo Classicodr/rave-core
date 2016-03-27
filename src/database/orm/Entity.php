@@ -23,6 +23,7 @@ use rave\core\exception\UnknownPropertyException;
 
 /**
  * Class Entity
+ *
  * @package rave\core
  */
 abstract class Entity
@@ -31,7 +32,6 @@ abstract class Entity
 
     /**
      * Entity constructor.
-     *
      * ```php
      * $properties = [
      *      "property" => "default value",
@@ -40,7 +40,6 @@ abstract class Entity
      *
      * @param array $properties
      * @param array $options [optional]
-     *
      * additionnals options
      */
     public function __construct(array $properties, array $options = [])
@@ -56,7 +55,6 @@ abstract class Entity
      * Set a property only if it was declared in the constructor
      *
      * @param array $properties , ["property" => "default value", ...]
-     *
      * @throws UnknownPropertyException
      */
     public function set(array $properties)
@@ -74,7 +72,6 @@ abstract class Entity
      * Return the reference of the property
      *
      * @param string $properties
-     *
      * @return mixed
      * @throws UnknownPropertyException
      */
@@ -89,6 +86,7 @@ abstract class Entity
 
     /**
      * Returns the set of primary keys
+     *
      * @return string|array|null
      */
     public function getPrimaryKeys()
@@ -101,7 +99,6 @@ abstract class Entity
      * return null if the option doesn't exist
      *
      * @param string $option
-     *
      * @return null|mixed
      */
     public function options($option)

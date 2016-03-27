@@ -131,7 +131,6 @@ abstract class Controller
      * Write a message in log file
      *
      * @param string $message
-     *
      * @throws IOException
      */
     private function writeLog($message)

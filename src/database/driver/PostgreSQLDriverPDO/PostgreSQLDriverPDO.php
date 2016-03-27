@@ -35,8 +35,8 @@ class PostgreSQLDriverPDO implements GenericDriver
 
         $this->instance
             = new PDO('pgsql:dbname=' . $info['database'] . ';host=' . $info['host'] . $port,
-                      $info['login'], $info['password'],
-                      [PDO::MYSQL_ATTR_INIT_COMMAND => 'SET NAMES utf8']);
+            $info['login'], $info['password'],
+            [PDO::MYSQL_ATTR_INIT_COMMAND => 'SET NAMES utf8']);
         $this->instance->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);;
     }
 
@@ -55,9 +55,7 @@ class PostgreSQLDriverPDO implements GenericDriver
      * @param Query $query
      * @param string $entity_name
      * @param bool $unique [optional]
-     *
      * fetch only one result
-     *
      * @return array|null the result, null if failed
      * @see query()
      * @see queryOne()

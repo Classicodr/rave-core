@@ -10,10 +10,9 @@
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  S
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
  *
- * define('WEB_ROOT
- * , http://localhost' *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
@@ -42,32 +41,31 @@ require_once ROOT . '/vendor/autoload.php';
  * Include the autoloader
  */
 
-Config::addArray(
-    [
-        'debug' => true,
+Config::addArray([
+    'debug' => true,
 
-        'datasources' => [
-            'test' => [
-                'driver'   => DriverFactory::MYSQL_PDO,
-                'host'     => 'localhost',
-                'database' => 'test',
-                'login'    => 'root',
-                'password' => ''
-            ],
+    'datasources' => [
+        'test' => [
+            'driver' => DriverFactory::MYSQL_PDO,
+            'host' => 'localhost',
+            'database' => 'test',
+            'login' => 'root',
+            'password' => ''
         ],
+    ],
 
-        'error' => [
-            '500' => '/internal-server-error',
-            '404' => '/not-found',
-            '403' => '/forbidden'
-        ],
+    'error' => [
+        '500' => '/internal-server-error',
+        '404' => '/not-found',
+        '403' => '/forbidden'
+    ],
 
-        'encryption' => [
-            'mode'   => MCRYPT_MODE_CBC,
-            'cypher' => MCRYPT_RIJNDAEL_256,
-            'iv'     => 'CHANGEME', //TODO
-            'key'    => 'CHANGEME', //TODO
-        ]
-    ]);
+    'encryption' => [
+        'mode' => MCRYPT_MODE_CBC,
+        'cypher' => MCRYPT_RIJNDAEL_256,
+        'iv' => 'CHANGEME', //TODO
+        'key' => 'CHANGEME', //TODO
+    ]
+]);
 
 DB::set(DriverFactory::get('test'));

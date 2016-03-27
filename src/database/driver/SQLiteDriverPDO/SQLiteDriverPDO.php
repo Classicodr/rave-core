@@ -50,9 +50,7 @@ class SQLiteDriverPDO implements GenericDriver
      * @param Query $query
      * @param string $entity_name
      * @param bool $unique [optional]
-     *
      * fetch only one result
-     *
      * @return array|null the result, null if failed
      * @see query()
      * @see queryOne()

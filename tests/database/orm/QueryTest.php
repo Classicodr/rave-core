@@ -1,5 +1,4 @@
 <?php
-
 /**
  * Rave <https://github.com/Classicodr/rave-core>
  * Copyright (C) 2016 Rave Team
@@ -17,6 +16,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+
 namespace rave\tests\database\orm;
 
 use PHPUnit_Framework_TestCase;
@@ -28,7 +28,6 @@ use rave\tests\app\model\UsersModel;
 
 /**
  * Class QueryTest
- *
  * Unit test of Query class
  *
  * @since 0.4.0-alpha
@@ -73,6 +72,7 @@ class QueryTest extends PHPUnit_Framework_TestCase
 
     /**
      * Test Insert
+     *
      * @throws IncorrectQueryException
      */
     public function testInsert()
@@ -85,8 +85,10 @@ class QueryTest extends PHPUnit_Framework_TestCase
                      ->values(['title' => 'title', 'name' => 'My name']);
 
         $this->assertEquals(
-            ['statement' => 'INSERT INTO articles (title, name) VALUES (:title, :name)',
-             'values'    => [':title' => 'title', ':name' => 'My name']],
+            [
+                'statement' => 'INSERT INTO articles (title, name) VALUES (:title, :name)',
+                'values' => [':title' => 'title', ':name' => 'My name']
+            ],
             $query_string->getParams());
         /*
          * Model class
@@ -96,8 +98,10 @@ class QueryTest extends PHPUnit_Framework_TestCase
         $query_model->insertInto($article_model)
                     ->values(['title' => 'title', 'name' => 'My name']);
         $this->assertEquals(
-            ['statement' => 'INSERT INTO articles (title, name) VALUES (:title, :name)',
-             'values'    => [':title' => 'title', ':name' => 'My name']],
+            [
+                'statement' => 'INSERT INTO articles (title, name) VALUES (:title, :name)',
+                'values' => [':title' => 'title', ':name' => 'My name']
+            ],
             $query_model->getParams());
 
         $this->assertEquals($query_model, $query_string);
@@ -140,8 +144,10 @@ class QueryTest extends PHPUnit_Framework_TestCase
               ->values(['title' => 'Hello World', 'groupe' => 'Jackson Five']);
 
         $this->assertEquals(
-            ['statement' => 'INSERT INTO articles (title, groupe) VALUES (:title, :groupe)',
-             'values'    => [':title' => 'Hello World', ':groupe' => 'Jackson Five']],
+            [
+                'statement' => 'INSERT INTO articles (title, groupe) VALUES (:title, :groupe)',
+                'values' => [':title' => 'Hello World', ':groupe' => 'Jackson Five']
+            ],
             $query->getParams()
         );
 
@@ -155,8 +161,10 @@ class QueryTest extends PHPUnit_Framework_TestCase
         $query->insertInto('articles')
               ->values($articles_entity);
         $this->assertEquals(
-            ['statement' => 'INSERT INTO articles (title, content) VALUES (:title, :content)',
-             'values'    => [':title' => 'Hello world', ':content' => 'really long']],
+            [
+                'statement' => 'INSERT INTO articles (title, content) VALUES (:title, :content)',
+                'values' => [':title' => 'Hello world', ':content' => 'really long']
+            ],
             $query->getParams());
     }
 
@@ -173,7 +181,7 @@ class QueryTest extends PHPUnit_Framework_TestCase
     public function testValuesIncorrect()
     {
         $this->setExpectedException(IncorrectQueryException::class,
-                                    'Not an array, nor an Entity in INSERT declaration');
+            'Not an array, nor an Entity in INSERT declaration');
         $query = Query::newQuery();
         $query->insertInto('articles')
               ->values('hello world');
@@ -201,9 +209,11 @@ class QueryTest extends PHPUnit_Framework_TestCase
               ->from('articles')
               ->where(['id', '=', 1]);
 
-        $this->assertEquals(['statement' => 'DELETE FROM articles WHERE id = :id ',
-                             'values'    => [':id' => 1]],
-                            $query->getParams());
+        $this->assertEquals([
+            'statement' => 'DELETE FROM articles WHERE id = :id ',
+            'values' => [':id' => 1]
+        ],
+            $query->getParams());
     }
 
     public function testDeleteDuplicate()
@@ -426,8 +436,10 @@ class QueryTest extends PHPUnit_Framework_TestCase
               ->set(['title' => 'Hello world'])
               ->where(['id', '=', 2]);
 
-        $this->assertEquals(['statement' => 'UPDATE articles SET title = :title WHERE id = :id ',
-                             'values'    => [':title' => 'Hello world', ':id' => 2]], $query->getParams());
+        $this->assertEquals([
+            'statement' => 'UPDATE articles SET title = :title WHERE id = :id ',
+            'values' => [':title' => 'Hello world', ':id' => 2]
+        ], $query->getParams());
 
         /*
          * Model
@@ -438,8 +450,10 @@ class QueryTest extends PHPUnit_Framework_TestCase
                     ->set(['title' => 'Hello world'])
                     ->where(['id', '=', 2]);
 
-        $this->assertEquals(['statement' => 'UPDATE articles SET title = :title WHERE id = :id ',
-                             'values'    => [':title' => 'Hello world', ':id' => 2]], $query_model->getParams());
+        $this->assertEquals([
+            'statement' => 'UPDATE articles SET title = :title WHERE id = :id ',
+            'values' => [':title' => 'Hello world', ':id' => 2]
+        ], $query_model->getParams());
         $this->assertEquals($query, $query_model);
     }
 
@@ -494,8 +508,11 @@ class QueryTest extends PHPUnit_Framework_TestCase
     {
         $default_query = Query::newQuery()
                               ->setQuery('UPDATE articles SET title = :title, content = :content WHERE title = :title0 ',
-                                         [':title'  => 'hello world', ':content' => 'really long',
-                                          ':title0' => 'Hello Jackson']);
+                                  [
+                                      ':title' => 'hello world',
+                                      ':content' => 'really long',
+                                      ':title0' => 'Hello Jackson'
+                                  ]);
 
         /*
          * Test Set array
@@ -597,34 +614,44 @@ class QueryTest extends PHPUnit_Framework_TestCase
         $query_select = Query::newQuery()
                              ->select()
                              ->from('articles')
-                             ->where(['AND' => [
-                                 ['id', '=', 2],
-                                 ['id', '=', 4]
-                             ]]);
+                             ->where([
+                                 'AND' => [
+                                     ['id', '=', 2],
+                                     ['id', '=', 4]
+                                 ]
+                             ]);
 
-        $this->assertEquals(['statement' => 'SELECT * FROM articles WHERE (id = :id AND id = :id0) ',
-                             'values'    => [':id' => 2, ':id0' => 4]], $query_select->getParams());
+        $this->assertEquals([
+            'statement' => 'SELECT * FROM articles WHERE (id = :id AND id = :id0) ',
+            'values' => [':id' => 2, ':id0' => 4]
+        ], $query_select->getParams());
 
         /*
          * test Delete
          */
         $query = Query::newQuery();
-        $query->delete()->from('articles')->where(['AND' => [
-            ['id', '=', 2],
-            ['title', '=', 'salut les geeks'],
-            'OR' => [
-                ['id', '=', 3],
-                ['id', '=', 4],
-                ['id', '=', 5],
+        $query->delete()->from('articles')->where([
+            'AND' => [
+                ['id', '=', 2],
+                ['title', '=', 'salut les geeks'],
+                'OR' => [
+                    ['id', '=', 3],
+                    ['id', '=', 4],
+                    ['id', '=', 5],
+                ]
             ]
-        ]]);
+        ]);
         $this->assertEquals(
-            ['statement' => 'DELETE FROM articles WHERE (id = :id AND title = :title AND (id = :id0 OR id = :id1 OR id = :id2)) ',
-             'values'    => [':id'     => 2,
-                             ':title' => 'salut les geeks',
-                             ':id0'   => 3,
-                             ':id1'   => 4,
-                             ':id2'   => 5]],
+            [
+                'statement' => 'DELETE FROM articles WHERE (id = :id AND title = :title AND (id = :id0 OR id = :id1 OR id = :id2)) ',
+                'values' => [
+                    ':id' => 2,
+                    ':title' => 'salut les geeks',
+                    ':id0' => 3,
+                    ':id1' => 4,
+                    ':id2' => 5
+                ]
+            ],
             $query->getParams());
 
         /*
@@ -634,25 +661,33 @@ class QueryTest extends PHPUnit_Framework_TestCase
         $query->update('articles')
               ->set(['title' => 'Harry Potter', 'author' => 'J.K Rowling'])
               ->where(
-                  ['conditions' => '(id = :id AND title = :title0 AND (id = :id1 OR id = :id2 
-OR id = :id3)) ', 'values' => [':id'     => 2,
-                               ':title0' => 'salut les geeks',
-                               ':id1'    => 3,
-                               ':id2'    => 4,
-                               ':id3'    => 5]]);
+                  [
+                      'conditions' => '(id = :id AND title = :title0 AND (id = :id1 OR id = :id2 
+OR id = :id3)) ',
+                      'values' => [
+                          ':id' => 2,
+                          ':title0' => 'salut les geeks',
+                          ':id1' => 3,
+                          ':id2' => 4,
+                          ':id3' => 5
+                      ]
+                  ]);
 
         $this->assertEquals(
-            ['statement' =>
-                 'UPDATE articles SET title = :title, author = :author WHERE (id = :id AND title = :title0 AND (id = :id1 OR id = :id2 
+            [
+                'statement' =>
+                    'UPDATE articles SET title = :title, author = :author WHERE (id = :id AND title = :title0 AND (id = :id1 OR id = :id2 
 OR id = :id3))  ',
-             'values'    =>
-                 [':title'  => 'Harry Potter',
-                  ':author' => 'J.K Rowling',
-                  ':id'     => 2,
-                  ':title0' => 'salut les geeks',
-                  ':id1'    => 3,
-                  ':id2'    => 4,
-                  ':id3'    => 5]
+                'values' =>
+                    [
+                        ':title' => 'Harry Potter',
+                        ':author' => 'J.K Rowling',
+                        ':id' => 2,
+                        ':title0' => 'salut les geeks',
+                        ':id1' => 3,
+                        ':id2' => 4,
+                        ':id3' => 5
+                    ]
             ],
             $query->getParams()
         );
