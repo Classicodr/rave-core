@@ -17,7 +17,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-namespace rave\core\database\ORM;
+namespace rave\core\database\orm;
 
 use rave\core\DB;
 use rave\core\exception\EntityException;
@@ -47,7 +47,25 @@ class Query
     }
 
     /**
+     * Custom query generator
+     *
+     * @param string $statement
+     * @param array $values [optional]
+     *
+     * @return $this
+     */
+    public function setQuery($statement, array $values = [])
+    {
+        $this->query_type = self::CUSTOM;
+        $this->params[self::STATEMENT] = $statement;
+        $this->params[self::VALUES] = $values;
+
+        return $this;
+    }
+
+    /**
      * @param Model|$model
+     *
      * @return Query
      * @throws IncorrectQueryException
      *
@@ -75,6 +93,7 @@ class Query
      * VALUE statement, need to be after insert into
      *
      * @param array|Entity $data
+     *
      * @return Query
      * @throws IncorrectQueryException
      * @see insertInto()
@@ -134,7 +153,102 @@ class Query
     }
 
     /**
-     * @param Model|$model
+     * Generates the SELECT statement
+     *
+     * $params can be an array:
+     *
+     * ```
+     * ['id', 'title', ...]
+     * ```
+     *
+     * or a string :`'id, title'`
+     *
+     * @param string|array $params [optional]
+     *
+     * @return Query
+     * @throws IncorrectQueryException
+     */
+    public function select($params = '*')
+    {
+        if (isset($this->query_type) || isset($this->build['select'])) {
+            throw new IncorrectQueryException('Cannot add a select statement');
+        }
+
+        $this->query_type = self::SELECT;
+        $this->build['select'] = 'SELECT ';
+
+        if (is_string($params)) {
+            $this->build['select'] .= $params . ' ';
+
+            return $this;
+        } elseif (is_array($params) && !empty($params)) {
+            $this->build['select'] .= implode(', ', $params) . ' ';
+
+            return $this;
+        }
+
+        throw new IncorrectQueryException('Incorrect SELECT');
+    }
+
+    /**
+     * adds FROM clause to the query
+     *
+     * $model can either be :
+     * - a string : `blog, ...`
+     * - Model Class
+     * - array of strings or Model Classes :
+     * ```
+     * [new ArticleModel(), 'article', ...]
+     * ```
+     *
+     *
+     * @param Model|array|$model
+     *
+     * @return Query
+     * @throws IncorrectQueryException
+     */
+    public function from($model)
+    {
+        if (isset($this->build['from']) || !isset($this->query_type)
+            || ($this->query_type !== self::SELECT && $this->query_type !== self::DELETE)
+        ) {
+            throw new IncorrectQueryException('Cannot add FROM statement');
+        } elseif (is_string($model)) {
+            $this->build['from'] = 'FROM ' . $model . ' ';
+
+            return $this;
+        } elseif (is_subclass_of($model, Model::class, false)) {
+            $this->build['from'] = 'FROM ' . $model->getTable() . ' ';
+        } elseif (is_array($model)) {
+            $this->build['from'] = 'FROM ';
+
+            foreach ($model as $item) {
+
+                if (is_subclass_of($item, Model::class, false)) {
+                    /** @var Model $item */
+                    $this->build['from'] .= $item->getTable() . ', ';
+                } elseif (is_string($item)) {
+                    $this->build['from'] .= $item . ', ';
+                } else {
+                    throw new IncorrectQueryException('Unsupported Model value in FROM : ' . $item);
+                }
+            }
+
+            $this->build['from'] = rtrim($this->build['from'], ', ');
+            $this->build['from'] .= ' ';
+        } else {
+            throw new IncorrectQueryException('Unsupported Model value in FROM : ' . $model);
+        }
+
+        return $this;
+    }
+
+    /**
+     * Begins the UPDATE Query, use set()
+     * @see set()
+     *
+     * @param Model|string $model
+     *
      * @return Query
      * @throws IncorrectQueryException
      */
@@ -160,6 +274,7 @@ class Query
 
     /**
      * @param array|Entity $data
+     *
      * @return Query
      * @throws IncorrectQueryException
      */
@@ -187,7 +302,6 @@ class Query
             }
         }
 
-
         $columns = rtrim($columns, ', ');
 
         $this->build['update_set'] = 'SET ' . $columns . ' ';
@@ -195,166 +309,6 @@ class Query
         $this->params[self::VALUES] = $clean;
 
         return $this;
-    }
-
-    /**
-     * Returns the array containing the SQL query
-     *
-     * @return array
-     * @see getStatement()
-     * @see getValues()
-     */
-    public function getParams()
-    {
-        $this->concat();
-
-        return $this->params;
-    }
-
-    /**
-     * Returns the statement
-     *
-     * @return string
-     * @throws IncorrectQueryException
-     */
-    private function concat()
-    {
-        if (!isset($this->query_type)) {
-            throw new IncorrectQueryException('Cannot concat inexisting statement');
-        } elseif ($this->query_type === self::CUSTOM) {
-            // NE FAIT RIEN
-        } elseif ($this->query_type === self::INSERT) {
-            if (!isset($this->build['insert_into'], $this->build['insert_into_values'])) {
-                throw new IncorrectQueryException('Incomplete INSERT statement');
-            }
-
-            $this->params[self::STATEMENT] = $this->build['insert_into'] . $this->build['insert_into_values'];
-        } elseif ($this->query_type === self::SELECT) {
-            if (!isset($this->build['select'], $this->build['from'])) {
-                throw new IncorrectQueryException('Incomplete SELECT statement');
-            }
-
-            $this->params[self::STATEMENT] = $this->build['select'] . $this->build['from'];
-            if (isset($this->build['where'])) {
-                $this->params[self::STATEMENT] .= $this->build['where'];
-            }
-        } elseif ($this->query_type === self::UPDATE) {
-            if (!isset($this->build['update'], $this->build['update_set'], $this->build['where'])) {
-                throw new IncorrectQueryException('Incomplete UPDATE statement');
-            }
-
-            $this->params[self::STATEMENT] = $this->build['update'] . $this->build['update_set'] . $this->build['where'];
-        } elseif ($this->query_type === self::DELETE) {
-            if (!isset($this->build['delete'], $this->build['from'], $this->build['where'])) {
-                throw new IncorrectQueryException('Incomplete DELETE statement');
-            }
-
-            $this->params[self::STATEMENT] = $this->build['delete'] . $this->build['from'] . $this->build['where'];
-        }
-
-        if (isset($this->build['more'])) {
-            $this->params[self::STATEMENT] .= $this->build['more'];
-        }
-    }
-
-    /**
-     * Returns the statement
-     *
-     * @return string
-     */
-    public function getStatement()
-    {
-        $this->concat();
-
-        return $this->params[self::STATEMENT];
-    }
-
-    /**
-     * Returns the values
-     *
-     * @return array
-     */
-    public function getValues()
-    {
-        return $this->params[self::VALUES];
-    }
-
-    /**
-     * Custom query generator
-     * @param string $statement
-     * @param array $values [optional]
-     */
-    public function setQuery($statement, array $values = [])
-    {
-        $this->query_type = self::CUSTOM;
-        $this->params[self::STATEMENT] = $statement;
-        $this->params[self::VALUES] = $values;
-    }
-
-    /**
-     * Execute this query
-     */
-    public function execute()
-    {
-        DB::get()->execute($this);
-    }
-
-    /**
-     * Executes the query
-     *
-     *<p>
-     * Can either be :
-     * <ul>
-     * <li>a string :
-     *  <ul>
-     *      <li>'all' `SELECT * ` from the current table</li>
-     *      <li>'first' select first matching element</li>
-     *  </ul>
-     * </li>
-     * <li>an array :
-     * <code>
-     *  ['select' => ['id', 'title'],
-     *      'from' =>
-     *          ['articles', new BlogModel()],
-     *      'where' =>
-     *          [
-     *              'conditions' => 'id = :id',
-     *              'values' => [':id' => 2]
-     *          ],
-     *      'append' => 'GROUP BY id'
-     *  ]
-     * </code>
-     * </li>
-     * <ul></p>
-     *
-     * @see GenericDriver::queryOne()
-     * @param string|array|null $options [optional]
-     * @return mixed
-     *
-     * @throws EntityException
-     * @throws IncorrectQueryException if the query is not correct
-     */
-    public function find($options = null)
-    {
-        if (is_array($options)) {
-            $this->select($options['select'])
-                ->from($options['from'])
-                ->where($options['where']);
-
-            if (isset($options['append'])) {
-                $this->appendSQL($options['append']);
-            }
-
-            return DB::get()->query($this);
-
-        } elseif (isset($this->query_type)) {
-            if ('first' === $options) {
-                return DB::get()->queryOne($this);
-
-            }
-
-            return DB::get()->query($this);
-        }
     }
 
     /**
@@ -383,6 +337,7 @@ class Query
      * ```
      *
      * @param array $params
+     *
      * @return Query
      * @throws IncorrectQueryException
      */
@@ -450,94 +405,10 @@ class Query
     }
 
     /**
-     * adds FROM clause to the query
-     *
-     * $model can either be :
-     * - a string : `blog, ...`
-     * - Model Class
-     * - array of strings or Model Classes :
-     * ```
-     * [new ArticleModel(), 'article', ...]
-     * ```
-     *
-     *
-     * @param Model|array|$model
-     * @return Query
-     * @throws IncorrectQueryException
-     */
-    public function from($model)
-    {
-        if (isset($this->build['from']) || !isset($this->query_type)
-            || ($this->query_type !== self::SELECT && $this->query_type !== self::DELETE)
-        ) {
-            throw new IncorrectQueryException('Cannot add FROM statement');
-        } elseif (is_string($model)) {
-            $this->build['from'] = 'FROM ' . $model . ' ';
-
-            return $this;
-        } elseif (is_subclass_of($model, Model::class, false)) {
-            $this->build['from'] = 'FROM ' . $model->getTable() . ' ';
-        } elseif (is_array($model)) {
-            $this->build['from'] = 'FROM ';
-
-            foreach ($model as $item) {
-
-                if (is_subclass_of($item, Model::class, false)) {
-                    /** @var Model $item */
-                    $this->build['from'] .= $item->getTable() . ', ';
-                } elseif (is_string($item)) {
-                    $this->build['from'] .= $item . ', ';
-                }
-            }
-
-            $this->build['from'] = rtrim($this->build['from'], ', ');
-            $this->build['from'] .= ' ';
-        }
-
-        return $this;
-    }
-
-    /**
-     * Generates the SELECT statement
-     *
-     * $params can be an array:
-     *
-     * ```
-     * ['id', 'title', ...]
-     * ```
-     *
-     * or a string :`'id, title'`
-     *
-     * @param string|array $params [optional]
-     * @return Query
-     * @throws IncorrectQueryException
-     */
-    public function select($params = '*')
-    {
-        if (isset($this->query_type) || isset($this->build['select'])) {
-            throw new IncorrectQueryException('Cannot add a select statement');
-        }
-
-        $this->query_type = self::SELECT;
-        $this->build['select'] = 'SELECT ';
-
-        if (is_string($params)) {
-            $this->build['select'] .= $params . ' ';
-
-            return $this;
-        } elseif (is_array($params) && !empty($params)) {
-            $this->build['select'] .= implode(', ', $params) . ' ';
-
-            return $this;
-        }
-
-        throw new IncorrectQueryException('Incorrect SELECT');
-    }
-
-    /**
      * Appends to the sql query
      *
      * @param string $more
+     *
      * @return Query
      */
     public function appendSQL($more)
@@ -545,6 +416,74 @@ class Query
         $this->build['more'] = $more;
 
         return $this;
+    }
+
+    /**
+     * Execute this query
+     */
+    public function execute()
+    {
+        DB::get()->execute($this);
+    }
+
+    /**
+     * Executes the query
+     *
+     *<p>
+     * Can either be :
+     * <ul>
+     * <li>a string :
+     *  <ul>
+     *      <li>'all' `SELECT * ` from the current table</li>
+     *      <li>'first' select first matching element</li>
+     *  </ul>
+     * </li>
+     * <li>an array :
+     * <code>
+     *  ['select' => ['id', 'title'],
+     *      'from' =>
+     *          ['articles', new BlogModel()],
+     *      'where' =>
+     *          [
+     *              'conditions' => 'id = :id',
+     *              'values' => [':id' => 2]
+     *          ],
+     *      'append' => 'GROUP BY id'
+     *  ]
+     * </code>
+     * </li>
+     * <ul></p>
+     *
+     * @see GenericDriver::queryOne()
+     *
+     * @param string|array|null $options [optional]
+     *
+     * @return mixed
+     *
+     * @throws EntityException
+     * @throws IncorrectQueryException if the query is not correct
+     */
+    public function find($options = null)
+    {
+        if (is_array($options)) {
+            $this->select($options['select'])
+                 ->from($options['from'])
+                 ->where($options['where']);
+
+            if (isset($options['append'])) {
+                $this->appendSQL($options['append']);
+            }
+
+            return DB::get()->query($this);
+
+        } elseif (isset($this->query_type)) {
+            if ('first' === $options) {
+                return DB::get()->queryOne($this);
+
+            }
+
+            return DB::get()->query($this);
+        }
     }
 
     /**
@@ -562,6 +501,104 @@ class Query
         }
 
         return DB::get()->queryOne($this);
+    }
+
+    /**
+     * Returns the array containing the SQL query
+     *
+     * @return array
+     * @see getStatement()
+     * @see getValues()
+     */
+    public function getParams()
+    {
+        $this->concat();
+
+        return $this->params;
+    }
+
+    /**
+     * Converts query parts to a string
+     *
+     * checks if all the required parts are present for a specific sql query
+     *
+     * @throws IncorrectQueryException
+     */
+    private function concat()
+    {
+        if (!isset($this->query_type)) {
+            throw new IncorrectQueryException('Cannot concat inexisting statement');
+        }
+
+        switch ($this->query_type) {
+            case self::INSERT:
+                if (!isset($this->build['insert_into'], $this->build['insert_into_values'])) {
+                    throw new IncorrectQueryException('Incomplete INSERT statement');
+                }
+
+                $this->params[self::STATEMENT] = $this->build['insert_into'] . $this->build['insert_into_values'];
+                break;
+
+            case self::SELECT:
+                if (!isset($this->build['select'], $this->build['from'])) {
+                    throw new IncorrectQueryException('Incomplete SELECT statement');
+                }
+
+                $this->params[self::STATEMENT] = $this->build['select'] . $this->build['from'];
+
+                if (isset($this->build['where'])) {
+                    $this->params[self::STATEMENT] .= $this->build['where'];
+                }
+                break;
+
+            case self::UPDATE:
+                if (!isset($this->build['update'], $this->build['update_set'], $this->build['where'])) {
+                    throw new IncorrectQueryException('Incomplete UPDATE statement');
+                }
+
+                $this->params[self::STATEMENT] = $this->build['update'] . $this->build['update_set']
+                                                 . $this->build['where'];
+                break;
+
+            case self::DELETE:
+                if (!isset($this->build['delete'], $this->build['from'], $this->build['where'])) {
+                    throw new IncorrectQueryException('Incomplete DELETE statement');
+                }
+
+                $this->params[self::STATEMENT] = $this->build['delete'] . $this->build['from'] . $this->build['where'];
+                break;
+
+            case self::CUSTOM:
+            default:
+                //Doesn't do anyting ^^
+                break;
+        }
+
+        if (isset($this->build['more'])) {
+            $this->params[self::STATEMENT] .= $this->build['more'];
+        }
+    }
+
+    /**
+     * Returns the statement
+     *
+     * @return string
+     */
+    public function getStatement()
+    {
+        $this->concat();
+
+        return $this->params[self::STATEMENT];
+    }
+
+    /**
+     * Returns the values
+     *
+     * @return array
+     */
+    public function getValues()
+    {
+        return $this->params[self::VALUES];
     }
 
 }
