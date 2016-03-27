@@ -17,7 +17,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-namespace rave\core\database\ORM;
+namespace rave\core\database\orm;
 
 use rave\core\exception\UnknownPropertyException;
 
@@ -56,6 +56,7 @@ abstract class Entity
      * Set a property only if it was declared in the constructor
      *
      * @param array $properties , ["property" => "default value", ...]
+     *
      * @throws UnknownPropertyException
      */
     public function set(array $properties)
@@ -73,6 +74,7 @@ abstract class Entity
      * Return the reference of the property
      *
      * @param string $properties
+     *
      * @return mixed
      * @throws UnknownPropertyException
      */
@@ -99,6 +101,7 @@ abstract class Entity
      * return null if the option doesn't exist
      *
      * @param string $option
+     *
      * @return null|mixed
      */
     public function options($option)

@@ -20,7 +20,6 @@
 namespace rave\core\database\orm;
 
 use rave\core\DB;
-use rave\core\exception\EntityException;
 use rave\core\exception\IncorrectQueryException;
 
 class Query
@@ -47,29 +46,60 @@ class Query
     }
 
     /**
+     * Returns a new Query instance
+     *
+     * Can be used for directly define the query :
+     * ```
+     * newQuery("SELECT * FROM example WHERE id = :id",[':id' => 2])
+     * ```
+     *
+     * @param null $statement
+     * @param array $values
+     *
+     * @return Query
+     */
+    public static function newQuery($statement = null, array $values = [])
+    {
+        if (isset($statement)) {
+            return Query::newQuery()->setQuery($statement, $values);
+        }
+
+        return new Query;
+    }
+
+    /**
      * Custom query generator
+     *
+     * $statement will not be checked
      *
      * @param string $statement
      * @param array $values [optional]
      *
      * @return $this
      */
-    public function setQuery($statement, array $values = [])
+    public function setQuery($statement, array $values = null)
     {
         $this->query_type = self::CUSTOM;
         $this->params[self::STATEMENT] = $statement;
-        $this->params[self::VALUES] = $values;
+
+        if (isset($values)) {
+            $this->params[self::VALUES] = $values;
+        }
 
         return $this;
     }
 
     /**
-     * @param Model|$model
+     * Initialize `INSERT INTO` sql declaration,
      *
-     * @return Query
-     * @throws IncorrectQueryException
+     * requires values() to work properly
      *
-     * @see values()
+     * @param Model|string $model
+     *
+     * @return $this
+     * @throws IncorrectQueryException if the statement is already initialized
+     *
+     * @see rave\core\database\orm\Query::values()
      */
     public function insertInto($model)
     {
@@ -85,12 +115,20 @@ class Query
         } elseif (is_subclass_of($model, Model::class, false)) {
             $this->build['insert_into'] .= $model->getTable();
         } else {
-            throw new IncorrectQueryException('Incorrect class');
+            throw new IncorrectQueryException('Incorrect class in INSERT');
         }
+
+        return $this;
     }
 
     /**
-     * VALUE statement, need to be after insert into
+     * VALUE statement, need to be after `insertInto()`
+     *
+     * the values can either be from an Entity or an array :
+     *
+     * ```
+     * ['title' => 'Hello World', 'name' => 'Jackson Five']
+     * ```
      *
      * @param array|Entity $data
      *
@@ -100,26 +138,27 @@ class Query
      */
     public function values($data)
     {
-        if (isset($this->insert_into_values) || !isset($this->query_type) || $this->query_type !== self::INSERT) {
+        if (isset($this->build['insert_into_values']) || !isset($this->query_type)
+            || $this->query_type !== self::INSERT
+        ) {
             throw new IncorrectQueryException('Cannot add (...)VALUES(...) statement');
         }
 
-        $this->insert_into_values = ' (';
+        $this->build['insert_into_values'] = ' (';
 
         if (is_array($data)) {
             $rows = $data;
         } elseif (is_subclass_of($data, Entity::class, false)) {
             $rows = get_object_vars($data);
         } else {
-            throw new IncorrectQueryException('Not an array, nor an Entity during statement INSERT');
+            throw new IncorrectQueryException('Not an array, nor an Entity in INSERT declaration');
         }
 
         $columns = '';
         $values = '';
-        $clean = [];
 
         foreach ($rows as $key => $value) {
-            if (!is_null($value)) {
+            if (isset($value)) {
                 $columns .= $key . ', ';
                 $values .= ':' . $key . ', ';
                 $clean[':' . $key] = $value;
@@ -129,16 +168,22 @@ class Query
         $columns = rtrim($columns, ', ');
         $values = rtrim($values, ', ');
         $this->build['insert_into_values'] .= $columns . ') VALUES (' . $values . ')';
-        $this->params[self::VALUES] = $clean;
+
+        if (isset($clean)) {
+            $this->params[self::VALUES] = $clean;
+        }
 
         return $this;
     }
 
     /**
      * Begins the delete statement
+     * must be followed by from() and where() to work properly
      *
      * @return Query $this
      * @throws IncorrectQueryException
+     * @see rave\core\database\orm\Query::from()
+     * @see rave\core\database\orm\Query::where()
      */
     public function delete()
     {
@@ -154,6 +199,7 @@ class Query
 
     /**
      * Generates the SELECT statement
+     * must be folowwed by from() to work properly
      *
      * $params can be an array:
      *
@@ -167,6 +213,7 @@ class Query
      *
      * @return Query
      * @throws IncorrectQueryException
+     * @see rave\core\database\orm\Query::from()
      */
     public function select($params = '*')
     {
@@ -179,15 +226,13 @@ class Query
 
         if (is_string($params)) {
             $this->build['select'] .= $params . ' ';
-
-            return $this;
         } elseif (is_array($params) && !empty($params)) {
             $this->build['select'] .= implode(', ', $params) . ' ';
-
-            return $this;
+        } else {
+            throw new IncorrectQueryException('Incorrect SELECT');
         }
 
-        throw new IncorrectQueryException('Incorrect SELECT');
+        return $this;
     }
 
     /**
@@ -244,13 +289,16 @@ class Query
     }
 
     /**
-     * Begins the UPDATE Query, use set()
-     * @see set()
+     * Begins the UPDATE declaration
+     *
+     * requires set() and where() to work
      *
      * @param Model|string $model
      *
      * @return Query
      * @throws IncorrectQueryException
+     * @see rave\core\database\orm\Query::set()
+     * @see rave\core\database\orm\Query::where()
      */
     public function update($model)
     {
@@ -266,17 +314,27 @@ class Query
         } elseif (is_subclass_of($model, Model::class, false)) {
             $this->build['update'] .= $model->getTable() . ' ';
         } else {
-            throw new IncorrectQueryException('Incorrect class');
+            throw new IncorrectQueryException('Incorrect parameter on UPDATE');
         }
 
         return $this;
     }
 
     /**
+     * Part of the UPDATE sql declaration
+     *
+     * Can set an array
+     * ```
+     * ['title'=> 'Harry Potter', 'author' => 'J.K Rowling']
+     * ```
+     *
+     * or an Entity
+     *
      * @param array|Entity $data
      *
-     * @return Query
+     * @return self
      * @throws IncorrectQueryException
+     * @see rave\core\database\orm\Query::update();
      */
     public function set($data)
     {
@@ -293,10 +351,9 @@ class Query
         }
 
         $columns = '';
-        $clean = [];
 
         foreach ($rows as $key => $value) {
-            if (!is_null($value)) {
+            if (isset($value)) {
                 $columns .= $key . ' = :' . $key . ', ';
                 $clean[':' . $key] = $value;
             }
@@ -306,7 +363,9 @@ class Query
 
         $this->build['update_set'] = 'SET ' . $columns . ' ';
 
-        $this->params[self::VALUES] = $clean;
+        if (isset($clean)) {
+            $this->params[self::VALUES] = $clean;
+        }
 
         return $this;
     }
@@ -325,15 +384,14 @@ class Query
      * or
      *
      * ```
-     * [
-     *   'conditions' => [
-     *      'AND'=>[
+     *  [
+     *      'AND'=>
+     *      [
      *          ['id', '=', $id],
      *          ['title', '!=', $title],
      *          OR => [['apple','=',$red]]
      *      ]
-     *      ]
-     * ]
+     *  ]
      * ```
      *
      * @param array $params
@@ -341,35 +399,37 @@ class Query
      * @return Query
      * @throws IncorrectQueryException
      */
-    public function where(array $params = [])
+    public function where(array $params)
     {
         if (isset($this->build['where']) || !isset($this->query_type) || $this->query_type === self::INSERT) {
             throw new IncorrectQueryException('Cannot add a WHERE statement');
         }
 
-        if (empty($params)) {
-            throw new IncorrectQueryException('Empty WHERE statement');
-        }
-
-        if (is_string($params[self::CONDITIONS])) {
+        if (isset($params[self::CONDITIONS]) && is_string($params[self::CONDITIONS])) {
             $this->build['where'] = 'WHERE ' . $params[self::CONDITIONS] . ' ';
 
-            if (!isset($params[self::VALUES])) {
-                $params[self::VALUES] = [];
+            if (isset($params[self::VALUES])) {
+                if (self::UPDATE === $this->query_type) {
+                    $this->params[self::VALUES] = array_merge($this->params[self::VALUES], $params[self::VALUES]);
+                } else {
+                    $this->params[self::VALUES] = $params[self::VALUES];
+                }
             }
 
-            if (self::UPDATE === $this->query_type) {
-                $this->params[self::VALUES] = array_merge($this->params[self::VALUES], $params[self::VALUES]);
-            } else {
-                $this->params[self::VALUES] = $params[self::VALUES];
-            }
-        } elseif (is_array($params[self::CONDITIONS])) {
-            $this->build['where'] = 'WHERE ' . $this->createWhere($params[self::CONDITIONS]) . ' ';
+        } elseif (is_array($params)) {
+            $this->build['where'] = 'WHERE ' . $this->createWhere($params) . ' ';
         }
 
         return $this;
     }
 
+    /**
+     * @param array $conditions
+     * @param int $count
+     *
+     * @return string
+     * @throws IncorrectQueryException
+     */
     private function createWhere(array $conditions, &$count = 0)
     {
         if (isset($conditions['AND'])) {
@@ -389,7 +449,7 @@ class Query
             }
             $where = '(' . implode(' ' . $option . ' ', $conditions[$option]) . ')';
 
-        } else {
+        } elseif (count($conditions) === 3) {
             $where = $conditions[0] . ' ' . $conditions[1] . ' :';
 
             if (isset($this->params[self::VALUES][':' . $conditions[0]])) {
@@ -399,13 +459,15 @@ class Query
 
             $where .= $conditions[0];
             $this->params[self::VALUES][':' . $conditions[0]] = $conditions[2];
+        }else{
+            throw new IncorrectQueryException('Bad where construction');
         }
 
         return $where;
     }
 
     /**
-     * Appends to the sql query
+     * Appends to the sql declaration
      *
      * @param string $more
      *
@@ -460,7 +522,6 @@ class Query
      *
      * @return mixed
      *
-     * @throws EntityException
      * @throws IncorrectQueryException if the query is not correct
      */
     public function find($options = null)
@@ -594,11 +655,11 @@ class Query
     /**
      * Returns the values
      *
-     * @return array
+     * @return array|null
      */
     public function getValues()
     {
-        return $this->params[self::VALUES];
+        return isset($this->params[self::VALUES]) ? $this->params[self::VALUES] : null;
     }
 
 }

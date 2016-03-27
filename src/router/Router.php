@@ -39,6 +39,7 @@ class Router
      * @param string $path
      * @param $callable
      * @param string|null $name
+     *
      * @return Route
      */
     public function put($path, $callable, $name = null)
@@ -53,6 +54,7 @@ class Router
      * @param string $path
      * @param $callable
      * @param $name
+     *
      * @return Route
      */
     private function add($method, $path, $callable, $name)
@@ -82,6 +84,7 @@ class Router
      * @param string $path
      * @param $callable
      * @param string|null $name
+     *
      * @return Route
      */
     public function post($path, $callable, $name = null)
@@ -95,6 +98,7 @@ class Router
      * @param string $path
      * @param $callable
      * @param string|null $name
+     *
      * @return Route
      */
     public function delete($path, $callable, $name = null)
@@ -130,6 +134,7 @@ class Router
      *
      * @param string $name
      * @param array $parameters
+     *
      * @return string
      * @throws RouterException
      */

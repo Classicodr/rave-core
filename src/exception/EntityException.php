@@ -17,13 +17,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-
 namespace rave\core\exception;
-
 
 class EntityException extends \Exception
 {
-
     const ERROR_CODE = 8;
 
     public function __construct($message)

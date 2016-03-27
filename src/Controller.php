@@ -73,7 +73,6 @@ abstract class Controller
 
         ob_start();
 
-
         if (file_exists($file)) {
             include_once $file;
         } else {
@@ -132,6 +131,7 @@ abstract class Controller
      * Write a message in log file
      *
      * @param string $message
+     *
      * @throws IOException
      */
     private function writeLog($message)

@@ -19,7 +19,7 @@
 
 namespace rave\core\database\driver;
 
-use rave\core\database\ORM\Query;
+use rave\core\database\orm\Query;
 
 /**
  * Interface GenericDriver
@@ -36,6 +36,7 @@ interface GenericDriver
      *
      * @param Query $query
      * @param string $entity
+     *
      * @return array result of the query
      */
     public function query(Query $query, $entity = null);
@@ -45,6 +46,7 @@ interface GenericDriver
      *
      * @param Query $query
      * @param string $entity
+     *
      * @return mixed result of the query
      */
     public function queryOne(Query $query, $entity = null);

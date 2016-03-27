@@ -56,6 +56,7 @@ class DriverFactory
      * Returns the configured driver
      *
      * @param string $dbname then name of the database configuration to use
+     *
      * @return GenericDriver the datasource Object
      *
      * @throws UnknownDriverException

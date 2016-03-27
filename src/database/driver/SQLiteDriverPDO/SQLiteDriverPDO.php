@@ -22,7 +22,7 @@ namespace rave\core\database\driver\SQLiteDriverPDO;
 use PDO;
 use PDOException;
 use rave\core\database\driver\GenericDriver;
-use rave\core\database\ORM\Query;
+use rave\core\database\orm\Query;
 use rave\core\Error;
 
 class SQLiteDriverPDO implements GenericDriver
@@ -52,6 +52,7 @@ class SQLiteDriverPDO implements GenericDriver
      * @param bool $unique [optional]
      *
      * fetch only one result
+     *
      * @return array|null the result, null if failed
      * @see query()
      * @see queryOne()

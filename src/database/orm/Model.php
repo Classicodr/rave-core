@@ -17,7 +17,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-namespace rave\core\database\ORM;
+namespace rave\core\database\orm;
 
 use rave\core\DB;
 use rave\core\exception\EntityException;
@@ -32,21 +32,7 @@ abstract class Model
 
     protected static $table;
 
-    /**
-     * @var string $primary the primary key of the table
-     * @deprecated
-     * @see Entity
-     */
-    protected static $primary = 'id';
-
     protected static $entity_name;
-
-    /**
-     * @var Query $query
-     * @deprecated
-     * @see Query
-     */
-    private $query;
 
     /**
      * @return string <p>the name of the table associated to the model</p>
@@ -71,22 +57,30 @@ abstract class Model
      * PDO SQL injection security
      *
      * @return Model
+     * @deprecated use newQuery() instead
+     * @see newQuery()
      */
-    public function query($statement, array $values = [])
+    public function setQuery($statement, array $values = [])
     {
-        $this->newQuery()->setQuery($statement, $values);
-
-        return $this;
+        return $this->newQuery($statement, $values);
     }
 
     /**
-     * Create a new Query
+     * Returns a new Query Object
+     *
+     * Can be used for directly define the query :
+     * ```
+     * newQuery("SELECT * FROM example WHERE id = :id",[':id' => 2 ])
+     * ```
+     *
+     * @param null $statement
+     * @param array $values
      *
      * @return Query
      */
-    public function newQuery()
+    public function newQuery($statement = null, array $values = null)
     {
-        new Query();
+        return Query::newQuery($statement, $values);
     }
 
     /**
@@ -104,6 +98,7 @@ abstract class Model
      * If the Entity has multiple primary keys, only update will work
      *
      * @param Entity $entity
+     *
      * @throws EntityException if there is a undefined multiple primary key
      */
     public function save(Entity $entity)
@@ -128,6 +123,7 @@ abstract class Model
      * Updates the entity
      *
      * @param Entity $entity
+     *
      * @throws IncorrectQueryException
      * @throws UnknownPropertyException
      */
@@ -137,44 +133,46 @@ abstract class Model
         $conditions = '';
         if (is_string($primaries)) {
             $conditions = [$primaries, '=', $entity->$primaries];
-        } else if (is_array($primaries)) {
-            foreach ($entity->getPrimaryKeys() as $primary_key) {
-                $conditions['AND'][] = [$primary_key, '=', $entity->$primary_key];
-            }
         } else {
-            throw new UnknownPropertyException('Incorrect primary key setup');
+            if (is_array($primaries)) {
+                foreach ($entity->getPrimaryKeys() as $primary_key) {
+                    $conditions['AND'][] = [$primary_key, '=', $entity->$primary_key];
+                }
+            } else {
+                throw new UnknownPropertyException('Incorrect primary key setup');
+            }
         }
 
-
         $this->newQuery()
-            ->update(static::$table)
-            ->set($entity)
-            ->where([
-                'conditions' => $conditions,
-            ])
-            ->execute();
+             ->update(static::$table)
+             ->set($entity)
+             ->where([
+                         'conditions' => $conditions,
+                     ])
+             ->execute();
     }
 
     /**
      * Adds the entity
      *
      * @param Entity $entity
+     *
      * @throws IncorrectQueryException
      */
     public function add(Entity $entity)
     {
         $this->newQuery()
-            ->insertInto(static::$table)
-            ->values($entity)
-            ->execute();
+             ->insertInto(static::$table)
+             ->values($entity)
+             ->execute();
     }
-
 
     /**
      * Deletes the entity
      *
      *
      * @param Entity $entity
+     *
      * @throws IncorrectQueryException
      * @throws UnknownPropertyException
      */
@@ -185,19 +183,21 @@ abstract class Model
 
         if (is_string($primaries)) {
             $conditions = [$primaries, '=', $entity->$primaries];
-        } else if (is_array($primaries)) {
-            foreach ($entity->getPrimaryKeys() as $primary_key) {
-                $conditions['AND'][] = [$primary_key, '=', $entity->$primary_key];
-            }
         } else {
-            throw new UnknownPropertyException('Incorrect primary key setup');
+            if (is_array($primaries)) {
+                foreach ($entity->getPrimaryKeys() as $primary_key) {
+                    $conditions['AND'][] = [$primary_key, '=', $entity->$primary_key];
+                }
+            } else {
+                throw new UnknownPropertyException('Incorrect primary key setup');
+            }
         }
 
         $this->newQuery()
-            ->delete()
-            ->from(static::$table)
-            ->where(['conditions' => $conditions])
-            ->execute();
+             ->delete()
+             ->from(static::$table)
+             ->where(['conditions' => $conditions])
+             ->execute();
     }
 
     /**
@@ -212,6 +212,7 @@ abstract class Model
      * ```
      *
      * @param string|array $primary primar(y|ies) key(s)
+     *
      * @return mixed
      * @throws EntityException
      * @throws IncorrectQueryException
@@ -230,11 +231,10 @@ abstract class Model
             $statement['AND'][] = [$index, '=', $item];
         }
 
-
         $query = $this->newQuery()
-            ->select()
-            ->from(static::$table)
-            ->where(['conditions' => $statement]);
+                      ->select()
+                      ->from(static::$table)
+                      ->where(['conditions' => $statement]);
 
         return DB::get()->queryOne($query, $entity_name);
     }
@@ -242,8 +242,8 @@ abstract class Model
     public function getAll()
     {
         $query = $this->newQuery()
-            ->select()
-            ->from(static::$table);
+                      ->select()
+                      ->from(static::$table);
 
         $entity_name = isset(static::$entity_name) ? static::$entity_name
             : str_replace('model', 'entity', str_replace('Model', 'Entity', static::class));

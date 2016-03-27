@@ -42,6 +42,7 @@ class Route
      * Checks if there is variables
      *
      * @param string $url
+     *
      * @return bool
      */
     public function match($url)
@@ -95,7 +96,6 @@ class Route
                 Error::create('Router: method does not exists', 500);
             }
 
-
             return call_user_func_array($this->callable, $this->matches);
         }
     }
@@ -105,6 +105,7 @@ class Route
      *
      * @param string $parameter
      * @param string $regex
+     *
      * @return Route
      */
     public function with($parameter, $regex)
@@ -118,6 +119,7 @@ class Route
      * Returns the url of the Route with the given parameters
      *
      * @param array $parameters
+     *
      * @return string
      */
     public function getUrl(array $parameters)
@@ -135,8 +137,8 @@ class Route
      * Checks if the parameter Match
      *
      * @param array $match
-     * @return string
      *
+     * @return string
      * @see match()
      */
     private function parameterMatch(array $match)

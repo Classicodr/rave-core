@@ -29,6 +29,7 @@ class Error
      *
      * @param string $errorMessage
      * @param int $errorCode
+     *
      * @throws UnknownErrorException
      */
     public static function create($errorMessage, $errorCode = 404)
@@ -44,6 +45,7 @@ class Error
      * Shows the error code
      *
      * @param int $errorCode
+     *
      * @throws UnknownErrorException
      */
     private static function show($errorCode)
