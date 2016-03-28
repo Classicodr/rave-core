@@ -1,3 +1,6 @@
+phpunit.local.xml
+tests/bootstrap.local.php
+
 ### Composer template
 composer.phar
 vendor/
