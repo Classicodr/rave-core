@@ -45,6 +45,7 @@ class Query
     private $query_type;
 
     private $build;
+    private $entity;
 
     /**
      * Returns a new Query instance
@@ -57,10 +58,10 @@ class Query
      * @param array $values
      * @return $this
      */
-    public static function newQuery($statement = null, array $values = [])
+    public static function create($statement = null, array $values = [])
     {
         if (isset($statement)) {
-            return Query::newQuery()->setQuery($statement, $values);
+            return Query::create()->setQuery($statement, $values);
         }
 
         return new Query;
@@ -188,6 +189,7 @@ class Query
         if (is_array($data)) {
             $rows = $data;
         } elseif (is_subclass_of($data, Entity::class, false)) {
+            $this->entity = get_class($data);
             $rows = get_object_vars($data);
         } else {
             throw new IncorrectQueryException('Not an array nor an Entity during statement SET');
@@ -234,11 +236,15 @@ class Query
      */
     public function find($options = null)
     {
+        if (!isset($this->query_type)) {
+            throw new IncorrectQueryException('The query is incorrect');
+        }
+
         if ($options === 'first') {
             return $this->first();
         }
 
-        return DB::get()->query($this);
+        return DB::get()->query($this, $this->entity);
 
     }
 
@@ -256,7 +262,7 @@ class Query
             throw new IncorrectQueryException('The query is incorrect');
         }
 
-        return DB::get()->queryOne($this);
+        return DB::get()->queryOne($this, $this->entity);
     }
 
     /**
@@ -389,12 +395,15 @@ class Query
 
         if (is_array($model)) {
             foreach ($model as $item) {
-                $this->build['from'] .= self::fromCreator($item) . ', ';
+                $this->build['from'] .= self::createFrom($item) . ', ';
             }
 
             $this->build['from'] = rtrim($this->build['from'], ', ') . ' ';
         } else {
-            $this->build['from'] .= self::fromCreator($model) . ' ';
+            if (is_subclass_of($model, Model::class, false)) {
+                $this->entity = $model->getEntity();
+            }
+            $this->build['from'] .= self::createFrom($model) . ' ';
         }
 
         return $this;
@@ -405,7 +414,7 @@ class Query
      * @return string
      * @throws IncorrectQueryException
      */
-    private static function fromCreator($model)
+    private static function createFrom($model)
     {
         if (is_string($model)) {
             return $model;
@@ -473,6 +482,7 @@ class Query
         if (is_array($data)) {
             $rows = $data;
         } elseif (is_subclass_of($data, Entity::class, false)) {
+            $this->entity = get_class($data);
             $rows = get_object_vars($data);
         } else {
             throw new IncorrectQueryException('Not an array, nor an Entity in INSERT declaration');
@@ -602,7 +612,7 @@ class Query
         }
 
         $this->statement = $this->build['update'] . $this->build['update_set']
-                           . $this->build['where'];
+            . $this->build['where'];
 
         return true;
 

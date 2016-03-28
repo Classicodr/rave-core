@@ -21,10 +21,8 @@ namespace rave\tests\database\orm;
 
 use PHPUnit_Framework_TestCase;
 use rave\core\database\orm\Query;
-use rave\core\exception\IncorrectQueryException;
 use rave\tests\app\entity\ArticlesEntity;
 use rave\tests\app\model\ArticlesModel;
-use rave\tests\app\model\UsersModel;
 
 /**
  * Class QueryTest
@@ -35,11 +33,29 @@ use rave\tests\app\model\UsersModel;
  */
 class QueryTest extends PHPUnit_Framework_TestCase
 {
-    public function testConstruct()
+    public function testNewQuery()
     {
-        $this->setExpectedException(IncorrectQueryException::class, 'Cannot concat inexisting statement');
-        $query = Query::newQuery();
-        $query->getParams();
+        $query_new = Query::create();
+        $query_classic = new Query();
+
+        $this->assertEquals($query_classic, $query_new);
+
+        $query_classic = new Query();
+        $query_classic->setQuery("SELECT * FROM articles WHERE id = :id", [':id' => 2]);
+        $query_new = Query::create("SELECT * FROM articles WHERE id = :id", [':id' => 2]);
+
+        $this->assertEquals($query_classic, $query_new);
+
+    }
+
+    /**
+     * @throws \rave\core\exception\IncorrectQueryException
+     * @expectedException \rave\core\exception\IncorrectQueryException
+     * @expectedExceptionMessage Cannot concat inexisting statement
+     */
+    public function testConstructInvalid()
+    {
+        Query::create()->getParams();
     }
 
     /**
@@ -50,7 +66,7 @@ class QueryTest extends PHPUnit_Framework_TestCase
         /*
          * Normal assignement
          */
-        $query = Query::newQuery();
+        $query = Query::create();
         $query->setQuery('SELECT * FROM articles WHERE id = :id', [':id' => 'id']);
 
         $this->assertEquals(
@@ -61,7 +77,7 @@ class QueryTest extends PHPUnit_Framework_TestCase
         /*
          * Empty value
          */
-        $query = Query::newQuery();
+        $query = Query::create();
         $query->setQuery('SELECT * FROM articles');
 
         $this->assertEquals(
@@ -71,143 +87,170 @@ class QueryTest extends PHPUnit_Framework_TestCase
     }
 
     /**
-     * Test Insert
+     * COMPLETE Test Insert
      *
-     * @throws IncorrectQueryException
+     * @throws \rave\core\exception\IncorrectQueryException
      */
     public function testInsert()
     {
         /*
-         * String
+         * insertInto(string)->values(array)
          */
-        $query_string = Query::newQuery();
-        $query_string->insertInto('articles')
-                     ->values(['title' => 'title', 'name' => 'My name']);
+        $query_string_array = Query::create();
+        $query_string_array->insertInto('articles')
+            ->values(['title' => 'Hello world', 'content' => 'really long']);
 
-        $this->assertEquals(
-            [
-                'statement' => 'INSERT INTO articles (title, name) VALUES (:title, :name)',
-                'values' => [':title' => 'title', ':name' => 'My name']
-            ],
-            $query_string->getParams());
-        /*
-         * Model class
-         */
-        $query_model = Query::newQuery();
-        $article_model = new ArticlesModel();
-        $query_model->insertInto($article_model)
-                    ->values(['title' => 'title', 'name' => 'My name']);
-        $this->assertEquals(
-            [
-                'statement' => 'INSERT INTO articles (title, name) VALUES (:title, :name)',
-                'values' => [':title' => 'title', ':name' => 'My name']
-            ],
-            $query_model->getParams());
-
-        $this->assertEquals($query_model, $query_string);
-    }
-
-    public function testInsertDuplicate()
-    {
-        $this->setExpectedException(IncorrectQueryException::class, 'Cannot add INSERT INTO statement');
-        $query = Query::newQuery();
-        $query->insertInto('articles')->insertInto('articles');
-    }
-
-    public function testInsertIncomplete()
-    {
-        $this->setExpectedException(IncorrectQueryException::class, 'Incomplete INSERT statement');
-        $query = Query::newQuery();
-        $query->insertInto('articles');
-        $query->getParams();
-    }
-
-    public function testInsertIncorrect()
-    {
-        $this->setExpectedException(IncorrectQueryException::class, 'Incorrect class in INSERT');
-        $query = Query::newQuery();
-        $query->insertInto($query);
-    }
-
-    /**
-     * Test Values
-     *
-     * @throws IncorrectQueryException
-     */
-    public function testValues()
-    {
-        /*
-         * Array test
-         */
-        $query = Query::newQuery();
-        $query->insertInto('articles')
-              ->values(['title' => 'Hello World', 'groupe' => 'Jackson Five']);
-
-        $this->assertEquals(
-            [
-                'statement' => 'INSERT INTO articles (title, groupe) VALUES (:title, :groupe)',
-                'values' => [':title' => 'Hello World', ':groupe' => 'Jackson Five']
-            ],
-            $query->getParams()
-        );
-
-        /*
-         * Entity test
-         */
-        $query = Query::newQuery();
-        $articles_entity = new ArticlesEntity();
-        $articles_entity->set(['title' => 'Hello world', 'content' => 'really long']);
-
-        $query->insertInto('articles')
-              ->values($articles_entity);
         $this->assertEquals(
             [
                 'statement' => 'INSERT INTO articles (title, content) VALUES (:title, :content)',
                 'values' => [':title' => 'Hello world', ':content' => 'really long']
             ],
-            $query->getParams());
-    }
+            $query_string_array->getParams());
 
-    public function testValuesDuplicate()
-    {
-        $this->setExpectedException(IncorrectQueryException::class, 'Cannot add (...)VALUES(...) statement');
+        /*
+         * insertInto(string)->values(Entity)
+         */
+        $query_string_entity = Query::create();
+        $articles_entity = new ArticlesEntity();
+        $articles_entity->set(['title' => 'Hello world', 'content' => 'really long']);
 
-        $query = Query::newQuery()
-                      ->insertInto('articles')
-                      ->values(['dummy' => 'data'])
-                      ->values(['dummy2' => 'data2']);
-    }
+        $query_string_entity->insertInto('articles')
+            ->values($articles_entity)
+            ->getParams();
 
-    public function testValuesIncorrect()
-    {
-        $this->setExpectedException(IncorrectQueryException::class,
-            'Not an array, nor an Entity in INSERT declaration');
-        $query = Query::newQuery();
-        $query->insertInto('articles')
-              ->values('hello world');
+        $this->assertEquals(
+            [
+                'statement' => 'INSERT INTO articles (title, content) VALUES (:title, :content)',
+                'values' => [':title' => 'Hello world', ':content' => 'really long']
+            ],
+            $query_string_entity->getParams());
 
-    }
+        /*
+         * insertInto(Model)->values(array)
+         */
+        $query_model_array = Query::create();
+        $article_model = new ArticlesModel();
+        $query_model_array->insertInto($article_model)
+            ->values(['title' => 'Hello World', 'content' => 'really long']);
 
-    public function testValuesMissingInsertInto()
-    {
-        $this->setExpectedException(IncorrectQueryException::class, 'Cannot add (...)VALUES(...) statement');
+        $this->assertEquals(
+            [
+                'statement' => 'INSERT INTO articles (title, content) VALUES (:title, :content)',
+                'values' => [':title' => 'Hello World', ':content' => 'really long']
+            ],
+            $query_model_array->getParams());
 
-        $query = Query::newQuery();
-        $query->values(['dummy' => 'data']);
+        /*
+         * insertInto(Model)->values(Entity)
+         */
+        $query_model_entity = Query::create();
+        $article_model = new ArticlesModel();
+        $articles_entity = new ArticlesEntity();
+        $articles_entity->set(['title' => 'Hello World', 'content' => 'really long']);
+        $query_model_entity->insertInto($article_model)
+            ->values($articles_entity);
+
+        $this->assertEquals(
+            [
+                'statement' => 'INSERT INTO articles (title, content) VALUES (:title, :content)',
+                'values' => [':title' => 'Hello World', ':content' => 'really long']
+            ],
+            $query_model_entity->getParams());
     }
 
     /**
-     * Test Delete
+     * @throws \rave\core\exception\IncorrectQueryException
+     * @expectedException \rave\core\exception\IncorrectQueryException
+     * @expectedExceptionMessage Cannot add INSERT INTO statement
+     */
+    public function testInsertDuplicate()
+    {
+        Query::create()
+            ->insertInto('articles')
+            ->insertInto('articles');
+    }
+
+    /**
+     * @throws \rave\core\exception\IncorrectQueryException
+     * @expectedException \rave\core\exception\IncorrectQueryException
+     * @expectedExceptionMessage Incomplete INSERT statement
+     */
+    public function testInsertIncompleteMissingValues()
+    {
+        Query::create()
+            ->insertInto('articles')
+            ->getParams();
+    }
+
+    /**
+     * @throws \rave\core\exception\IncorrectQueryException
+     * @expectedException \rave\core\exception\IncorrectQueryException
+     * @expectedExceptionMessage Incorrect class in INSERT
+     */
+    public function testInsertIncorrect()
+    {
+        Query::create()
+            ->insertInto(Query::create());
+    }
+
+    /*
+     * Test Values
+     */
+    /**
+     * @throws \rave\core\exception\IncorrectQueryException
+     * @expectedException \rave\core\exception\IncorrectQueryException
+     * @expectedExceptionMessage Cannot add (...)VALUES(...) statement
+     */
+    public function testValuesDuplicate()
+    {
+        Query::create()
+            ->insertInto('articles')
+            ->values(['dummy' => 'data'])
+            ->values(['dummy2' => 'data2']);
+    }
+
+    /**
+     * @throws \rave\core\exception\IncorrectQueryException
+     * @expectedException \rave\core\exception\IncorrectQueryException
+     * @expectedExceptionMessage Cannot add (...)VALUES(...) statement
+     */
+    public function testValuesIncompleteMissingInsertInto()
+    {
+        Query::create()
+            ->values(['dummy' => 'data']);
+    }
+
+    /**
+     * @throws \rave\core\exception\IncorrectQueryException
+     * @expectedException \rave\core\exception\IncorrectQueryException
+     * @expectedExceptionMessage Not an array, nor an Entity in INSERT declaration
+     */
+    public function testValuesIncorrect()
+    {
+        Query::create()->insertInto('articles')
+            ->values('hello world');
+
+    }
+
+    /**
+     * COMPLETE Test Delete
+     * from() and where() complete test is in select and UPDATE
      *
-     * @throws IncorrectQueryException
+     * can't be incorrect ^^
+     *
+     * @throws \rave\core\exception\IncorrectQueryException
      */
     public function testDelete()
     {
-        $query = Query::newQuery();
-
-        $query->delete()
-              ->from('articles')
-              ->where(['id', '=', 1]);
+        /*
+         * delete() from() and where() are independent
+         *
+         * from() and where() are tested in select() and update()
+        */
+        $query = Query::create()
+            ->delete()
+            ->from('articles')
+            ->where(['id', '=', 1]);
 
         $this->assertEquals([
             'statement' => 'DELETE FROM articles WHERE id = :id ',
@@ -216,503 +259,550 @@ class QueryTest extends PHPUnit_Framework_TestCase
             $query->getParams());
     }
 
+    /**
+     * @throws \rave\core\exception\IncorrectQueryException
+     * @expectedException \rave\core\exception\IncorrectQueryException
+     * @expectedExceptionMessage Cannot add DELETE statement
+     */
     public function testDeleteDuplicate()
     {
-        $this->setExpectedException(IncorrectQueryException::class, 'Cannot add DELETE statement');
-        $query = Query::newQuery();
+        $query = Query::create();
         $query->delete()->delete();
     }
 
+    /**
+     * @throws \rave\core\exception\IncorrectQueryException
+     * @expectedException \rave\core\exception\IncorrectQueryException
+     * @expectedExceptionMessage Incomplete DELETE statement
+     */
     public function testDeleteIncomplete()
     {
-        $this->setExpectedException(IncorrectQueryException::class, 'Incomplete DELETE statement');
-        $query = Query::newQuery();
-        $query->delete();
-        $query->getParams();
-    }
-
-    public function testDeleteMissingFrom()
-    {
-        $this->setExpectedException(IncorrectQueryException::class, 'Incomplete DELETE statement');
-        $query = Query::newQuery();
-        $query->delete()->where(['articles', '=', 2]);
-        $query->getParams();
-    }
-
-    public function testDeleteMissingWhere()
-    {
-        $this->setExpectedException(IncorrectQueryException::class, 'Incomplete DELETE statement');
-        $query = Query::newQuery();
-        $query->delete()->from('articles');
-        $query->getParams();
+        Query::create()
+            ->delete()
+            ->getParams();
     }
 
     /**
-     * Test Select
+     * @throws \rave\core\exception\IncorrectQueryException
+     * @expectedException \rave\core\exception\IncorrectQueryException
+     * @expectedExceptionMessage Incomplete DELETE statement
+     */
+    public function testDeleteMissingFrom()
+    {
+        Query::create()
+            ->delete()
+            ->where(['articles', '=', 2])
+            ->getParams();
+    }
+
+    /**
+     * @throws \rave\core\exception\IncorrectQueryException
+     * @expectedException \rave\core\exception\IncorrectQueryException
+     * @expectedExceptionMessage Incomplete DELETE statement
+     */
+    public function testDeleteMissingWhere()
+    {
+        Query::create()
+            ->delete()
+            ->from('articles')
+            ->getParams();
+    }
+
+    /**
+     * COMPLETE Test Select
      *
-     * @throws IncorrectQueryException
+     * from() and where() are tested here
+     *
+     * @throws \rave\core\exception\IncorrectQueryException
      */
     public function testSelect()
     {
+        $articles_model = new ArticlesModel();
+
+        /* select(), from() and where() are independant */
         /*
-         * test default
+         * select()->from(string)
          */
-        $query = Query::newQuery();
+        $query = Query::create();
         $query->select()
-              ->from('articles');
+            ->from(['users', $articles_model]);
 
         $this->assertEquals(
-            ['statement' => 'SELECT * FROM articles '],
+            ['statement' => 'SELECT * FROM users, articles '],
             $query->getParams());
 
         /*
-         * Test array
+         * select(array)->from(Model)->where(condition,values)
          */
-        $query = Query::newQuery();
-        $query->select(['id', 'title'])
-              ->from('articles');
+        $query_array_string = Query::create()
+            ->select(['id', 'title'])
+            ->from($articles_model)
+            ->where([
+                'conditions' => '(id = :id AND (title = :title OR title = :title0))',
+                'values' => [':id' => 2, ':title' => 'helloworld', ':title0' => 'hello world']
+            ]);
 
         $this->assertEquals(
-            $query->getParams(),
-            ['statement' => 'SELECT id, title FROM articles ']
+            [
+                'statement' => 'SELECT id, title FROM articles WHERE (id = :id AND (title = :title OR title = :title0)) ',
+                'values' => [':id' => 2, ':title' => 'helloworld', ':title0' => 'hello world']
+            ],
+            $query_array_string->getParams()
         );
 
         /*
-         * Test string
+         * select(string)->from(string)->where(newWhere)
          */
-        $query = Query::newQuery();
-        $query->select('id, title')
-              ->from('articles');
-
+        $query_string_string = Query::create()
+            ->select('id, title')
+            ->from('articles')
+            ->where(['AND' => [['id', '=', 2], 'OR' => [['title', '=', 'helloworld'], ['title', '=', 'hello world']]]]);
         $this->assertEquals(
-            $query->getParams(),
-            ['statement' => 'SELECT id, title FROM articles ']
+            [
+                'statement' => 'SELECT id, title FROM articles WHERE (id = :id AND (title = :title OR title = :title0)) ',
+                'values' => [':id' => 2, ':title' => 'helloworld', ':title0' => 'hello world']
+            ],
+            $query_string_string->getParams()
         );
+
     }
 
+    /**
+     * @throws \rave\core\exception\IncorrectQueryException
+     * @expectedException \rave\core\exception\IncorrectQueryException
+     * @expectedExceptionMessage Cannot add a select statement
+     */
     public function testSelectDuplicate()
     {
-        $this->setExpectedException(IncorrectQueryException::class, 'Cannot add a select statement');
-        $query = Query::newQuery();
-        $query->select()->select();
-        $query->getParams();
+        Query::create()
+            ->select()
+            ->select()
+            ->getParams();
     }
 
-    public function testSelectIncomplete()
+    /**
+     * @throws \rave\core\exception\IncorrectQueryException
+     * @expectedException \rave\core\exception\IncorrectQueryException
+     * @expectedExceptionMessage Incomplete SELECT statement
+     */
+    public function testSelectIncompleteMissingFrom()
     {
-        $this->setExpectedException(IncorrectQueryException::class, 'Incomplete SELECT statement');
-        $query = Query::newQuery();
-        $query->select();
-        $query->getParams();
+        Query::create()
+            ->select()
+            ->getParams();
     }
 
+    /**
+     * @throws \rave\core\exception\IncorrectQueryException
+     * @expectedException \rave\core\exception\IncorrectQueryException
+     * @expectedExceptionMessage Incorrect SELECT
+     */
     public function testSelectIncorrect()
     {
-        $this->setExpectedException(IncorrectQueryException::class, 'Incorrect SELECT');
-        $query = Query::newQuery();
-        $query->select($query);
-        $query->getParams();
+        Query::create()
+            ->select(Query::create())
+            ->getParams();
     }
 
-    /**
+    /*
      * Test From
-     *
-     * @throws IncorrectQueryException
      */
-    public function testFrom()
-    {
-        /*
-         * Test string
-         */
-        $query = Query::newQuery();
-        $query->select()
-              ->from('articles');
-
-        $this->assertEquals(
-            ['statement' => 'SELECT * FROM articles '],
-            $query->getParams());
-
-        /*
-         * Test Model class
-         */
-        $query = Query::newQuery();
-        $articles_model = new ArticlesModel();
-        $query->select()
-              ->from($articles_model);
-
-        $this->assertEquals(
-            ['statement' => 'SELECT * FROM articles '],
-            $query->getParams()
-        );
-
-        /*
-         * Test array full string
-         */
-        $query = Query::newQuery();
-        $query->select()
-              ->from(['articles', 'blog']);
-
-        $this->assertEquals(
-            ['statement' => 'SELECT * FROM articles, blog '],
-            $query->getParams()
-        );
-
-        /*
-         * Test array full ClassModel
-         */
-        $query = Query::newQuery();
-        $articles_model = new ArticlesModel();
-        $users_model = new UsersModel();
-        $query->select()
-              ->from([$articles_model, $users_model]);
-
-        $this->assertEquals(
-            ['statement' => 'SELECT * FROM articles, users '],
-            $query->getParams()
-        );
-
-        /*
-         * Test array string and Model classes
-         */
-        $query_model = Query::newQuery();
-        $articles_model = new ArticlesModel();
-        $query_model->select()
-                    ->from([$articles_model, 'users']);
-
-        $this->assertEquals(
-            ['statement' => 'SELECT * FROM articles, users '],
-            $query_model->getParams()
-        );
-
-        $this->assertEquals($query, $query_model);
-    }
-
+    /**
+     * @throws \rave\core\exception\IncorrectQueryException
+     * @expectedException \rave\core\exception\IncorrectQueryException
+     * @expectedExceptionMessage Cannot add FROM statement
+     */
     public function testFromDuplicate()
     {
-        $this->setExpectedException(IncorrectQueryException::class, 'Cannot add FROM statement');
-        $query = Query::newQuery();
-        $query->select()
-              ->from('articles')
-              ->from('users')
-              ->getParams();
-    }
-
-    public function testFromIncomplete()
-    {
-        $this->setExpectedException(IncorrectQueryException::class, 'Cannot add FROM statement');
-        $query = Query::newQuery();
-        $query->from('articles')
-              ->getParams();
-    }
-
-    public function testFromIncorrectArrayAttribute()
-    {
-        $this->setExpectedException(IncorrectQueryException::class, 'Unsupported Model value in FROM : 5');
-        $query = Query::newQuery();
-        $query->select()
-              ->from([5]);
-    }
-
-    public function testFromIncorrectAttribute()
-    {
-        $this->setExpectedException(IncorrectQueryException::class, 'Unsupported Model value in FROM : 5');
-        $query = Query::newQuery();
-        $query->select()
-              ->from(5);
+        Query::create()
+            ->select()
+            ->from('articles')
+            ->from('users')
+            ->getParams();
     }
 
     /**
-     * Test Update
+     * @throws \rave\core\exception\IncorrectQueryException
+     * @expectedException \rave\core\exception\IncorrectQueryException
+     * @expectedExceptionMessage Cannot add FROM statement
+     */
+    public function testFromIncomplete()
+    {
+        Query::create()
+            ->from('articles')
+            ->getParams();
+    }
+
+    /**
+     * @throws \rave\core\exception\IncorrectQueryException
+     * @expectedException \rave\core\exception\IncorrectQueryException
+     * @expectedExceptionMessage Unsupported Model value in FROM : 5
+     */
+    public function testFromIncorrectArrayAttribute()
+    {
+        Query::create()
+            ->select()
+            ->from([5]);
+    }
+
+    /**
+     * @throws \rave\core\exception\IncorrectQueryException
+     * @expectedException \rave\core\exception\IncorrectQueryException
+     * @expectedExceptionMessage Unsupported Model value in FROM : 5
+     */
+    public function testFromIncorrectAttribute()
+    {
+        Query::create()
+            ->select()
+            ->from(5);
+    }
+
+    /**
+     * Complete Test Update
      *
-     * @throws IncorrectQueryException
+     * @throws \rave\core\exception\IncorrectQueryException
      */
     public function testUpdate()
     {
         /*
-         * string
+         * update(string)->set(array)->where(new array)
          */
-        $query = Query::newQuery();
+        $query = Query::create();
         $query->update('articles')
-              ->set(['title' => 'Hello world'])
-              ->where(['id', '=', 2]);
+            ->set(['title' => 'Hello world', 'content' => 'thisisacontent'])
+            ->where(['title', '=', 'helloworld']);
 
         $this->assertEquals([
-            'statement' => 'UPDATE articles SET title = :title WHERE id = :id ',
-            'values' => [':title' => 'Hello world', ':id' => 2]
+            'statement' => 'UPDATE articles SET title = :title, content = :content WHERE title = :title0 ',
+            'values' => [':title' => 'Hello world', ':content' => 'thisisacontent', ':title0' => 'helloworld']
         ], $query->getParams());
 
         /*
-         * Model
+         * update(Model)->set(entity)->where(old array)
          */
-        $query_model = Query::newQuery();
+        $query_model = Query::create();
         $articles_model = new ArticlesModel();
-        $query_model->update($articles_model)
-                    ->set(['title' => 'Hello world'])
-                    ->where(['id', '=', 2]);
+        $articles_entity = new ArticlesEntity();
+        $articles_entity->set(['title' => 'Hello world', 'content' => 'thisisacontent']);
 
+        $query_model->update($articles_model)
+            ->set($articles_entity)
+            ->where([
+                'conditions' => 'title = :title0',
+                'values' => [':title0' => 'helloworld']
+            ]);
         $this->assertEquals([
-            'statement' => 'UPDATE articles SET title = :title WHERE id = :id ',
-            'values' => [':title' => 'Hello world', ':id' => 2]
+            'statement' => 'UPDATE articles SET title = :title, content = :content WHERE title = :title0 ',
+            'values' => [':title' => 'Hello world', ':content' => 'thisisacontent', ':title0' => 'helloworld']
         ], $query_model->getParams());
-        $this->assertEquals($query, $query_model);
     }
+
+    /**
+     * @throws \rave\core\exception\IncorrectQueryException
+     * @expectedException \rave\core\exception\IncorrectQueryException
+     * @expectedExceptionMessage Cannot add UPDATE statement
+     */
 
     public function testUpdateDuplicate()
     {
-        $this->setExpectedException(IncorrectQueryException::class, 'Cannot add UPDATE statement');
-        Query::newQuery()
-             ->update('articles')
-             ->update('users')
-             ->getParams();
+        Query::create()
+            ->update('articles')
+            ->update('users')
+            ->getParams();
     }
 
+    /**
+     * @throws \rave\core\exception\IncorrectQueryException
+     * @expectedException \rave\core\exception\IncorrectQueryException
+     * @expectedExceptionMessage Incomplete UPDATE statement
+     */
     public function testUpdateIncomplete()
     {
-        $this->setExpectedException(IncorrectQueryException::class, 'Incomplete UPDATE statement');
-        Query::newQuery()
-             ->update('articles')
-             ->getParams();
+        Query::create()
+            ->update('articles')
+            ->getParams();
     }
 
+    /**
+     * @throws \rave\core\exception\IncorrectQueryException
+     * @expectedException \rave\core\exception\IncorrectQueryException
+     * @expectedExceptionMessage Incorrect parameter on UPDATE
+     */
     public function testUpdateIncorrect()
     {
-        $this->setExpectedException(IncorrectQueryException::class, 'Incorrect parameter on UPDATE');
-        Query::newQuery()
-             ->update(2);
+        Query::create()
+            ->update(2);
     }
+
+    /**
+     * @throws \rave\core\exception\IncorrectQueryException
+     * @expectedException \rave\core\exception\IncorrectQueryException
+     * @expectedExceptionMessage Incomplete UPDATE statement
+     */
 
     public function testUpdateMissingSet()
     {
-        $this->setExpectedException(IncorrectQueryException::class, 'Incomplete UPDATE statement');
-        Query::newQuery()
-             ->update('articles')
-             ->where(['id', '=', 2])
-             ->getParams();
+        Query::create()
+            ->update('articles')
+            ->where(['id', '=', 2])
+            ->getParams();
     }
+
+    /**
+     * @throws \rave\core\exception\IncorrectQueryException
+     * @expectedException \rave\core\exception\IncorrectQueryException
+     * @expectedExceptionMessage Incomplete UPDATE statement
+     */
 
     public function testUpdateMissingWhere()
     {
-        $this->setExpectedException(IncorrectQueryException::class, 'Incomplete UPDATE statement');
-        Query::newQuery()
-             ->update('articles')
-             ->set(['title' => 'Hello world'])
-             ->getParams();
+        Query::create()
+            ->update('articles')
+            ->set(['title' => 'Hello world'])
+            ->getParams();
     }
+
+    /*
+     * Test Set
+     */
 
     /**
-     * Test Set
-     *
-     * @throws IncorrectQueryException
+     * @throws \rave\core\exception\IncorrectQueryException
+     * @expectedException \rave\core\exception\IncorrectQueryException
+     * @expectedExceptionMessage Cannot add SET statement
      */
-    public function testSet()
-    {
-        $default_query = Query::newQuery()
-                              ->setQuery('UPDATE articles SET title = :title, content = :content WHERE title = :title0 ',
-                                  [
-                                      ':title' => 'hello world',
-                                      ':content' => 'really long',
-                                      ':title0' => 'Hello Jackson'
-                                  ]);
-
-        /*
-         * Test Set array
-         */
-        $query_array = Query::newQuery();
-        $query_array->update('articles')
-                    ->set(['title' => 'hello world', 'content' => 'really long'])
-                    ->where(['title', '=', 'Hello Jackson']);
-
-        $this->assertEquals($default_query->getParams(), $query_array->getParams());
-
-        /*
-         * Test set Entity
-         */
-        $articles_entity = new ArticlesEntity();
-        $articles_entity->title = 'hello world';
-        $articles_entity->content = 'really long';
-        $query_entity = Query::newQuery()
-                             ->update('articles')
-                             ->set($articles_entity)
-                             ->where(['title', '=', 'Hello Jackson']);
-
-        $this->assertEquals($default_query->getParams(), $query_entity->getParams());
-
-        $this->assertEquals($query_array, $query_entity);
-
-    }
 
     public function testSetDuplicate()
     {
-        $this->setExpectedException(IncorrectQueryException::class, 'Cannot add SET statement');
-        Query::newQuery()->update('articles')
-             ->set(['title' => 'test'])
-             ->set(['content' => 'testcontent']);
-    }
-
-    public function testSetIncomplete()
-    {
-        $this->setExpectedException(IncorrectQueryException::class, 'Cannot add SET statement');
-        Query::newQuery()->set(['title' => 'hello world'])->getParams();
-    }
-
-    public function testSetIncorrect()
-    {
-        $this->setExpectedException(IncorrectQueryException::class, 'Not an array nor an Entity during statement SET');
-        Query::newQuery()->update('articles')
-             ->set('test');
-    }
-
-    public function testSetMissingUpdate()
-    {
-        $this->setExpectedException(IncorrectQueryException::class, 'Cannot add SET statement');
-        Query::newQuery()->set(['title' => 'hello world'])
-             ->where(['id', '=', 2])->getParams();
-    }
-
-    public function testSetMissingWhere()
-    {
-        $this->setExpectedException(IncorrectQueryException::class, 'Incomplete UPDATE statement');
-        Query::newQuery()->update('articles')->set(['title' => 'hello world'])->getParams();
+        Query::create()->update('articles')
+            ->set(['title' => 'test'])
+            ->set(['content' => 'testcontent']);
     }
 
     /**
-     * Test where
-     *
-     * @throws IncorrectQueryException
+     * @throws \rave\core\exception\IncorrectQueryException
+     * @expectedException \rave\core\exception\IncorrectQueryException
+     * @expectedExceptionMessage Cannot add SET statement
      */
-    public function testWhere()
+    public function testSetIncompleteMissingUpdate()
     {
-
-        $query_default = Query::newQuery('SELECT * FROM articles WHERE id = :id ', [':id' => 2]);
-        /*
-         * Test array conditions,values
-         */
-        $query_old = Query::newQuery()
-                          ->select()
-                          ->from('articles')
-                          ->where(['conditions' => 'id = :id', 'values' => [':id' => 2]]);
-
-        $this->assertEquals($query_default->getParams(), $query_old->getParams()
-        );
-
-        /*
-         * Test full array,
-         */
-        $articles_model = new ArticlesModel();
-
-        $query_better = Query::newQuery()
-                             ->select()
-                             ->from($articles_model)
-                             ->where(['id', '=', 2]);
-        $this->assertEquals($query_default->getParams(), $query_better->getParams());
-
-        $this->assertEquals($query_old, $query_better);
-
-        /*
-         * test Select
-         */
-        $query_select = Query::newQuery()
-                             ->select()
-                             ->from('articles')
-                             ->where([
-                                 'AND' => [
-                                     ['id', '=', 2],
-                                     ['id', '=', 4]
-                                 ]
-                             ]);
-
-        $this->assertEquals([
-            'statement' => 'SELECT * FROM articles WHERE (id = :id AND id = :id0) ',
-            'values' => [':id' => 2, ':id0' => 4]
-        ], $query_select->getParams());
-
-        /*
-         * test Delete
-         */
-        $query = Query::newQuery();
-        $query->delete()->from('articles')->where([
-            'AND' => [
-                ['id', '=', 2],
-                ['title', '=', 'salut les geeks'],
-                'OR' => [
-                    ['id', '=', 3],
-                    ['id', '=', 4],
-                    ['id', '=', 5],
-                ]
-            ]
-        ]);
-        $this->assertEquals(
-            [
-                'statement' => 'DELETE FROM articles WHERE (id = :id AND title = :title AND (id = :id0 OR id = :id1 OR id = :id2)) ',
-                'values' => [
-                    ':id' => 2,
-                    ':title' => 'salut les geeks',
-                    ':id0' => 3,
-                    ':id1' => 4,
-                    ':id2' => 5
-                ]
-            ],
-            $query->getParams());
-
-        /*
-         * test Update
-         */
-        $query = Query::newQuery();
-        $query->update('articles')
-              ->set(['title' => 'Harry Potter', 'author' => 'J.K Rowling'])
-              ->where(
-                  [
-                      'conditions' => '(id = :id AND title = :title0 AND (id = :id1 OR id = :id2 
-OR id = :id3)) ',
-                      'values' => [
-                          ':id' => 2,
-                          ':title0' => 'salut les geeks',
-                          ':id1' => 3,
-                          ':id2' => 4,
-                          ':id3' => 5
-                      ]
-                  ]);
-
-        $this->assertEquals(
-            [
-                'statement' =>
-                    'UPDATE articles SET title = :title, author = :author WHERE (id = :id AND title = :title0 AND (id = :id1 OR id = :id2 
-OR id = :id3))  ',
-                'values' =>
-                    [
-                        ':title' => 'Harry Potter',
-                        ':author' => 'J.K Rowling',
-                        ':id' => 2,
-                        ':title0' => 'salut les geeks',
-                        ':id1' => 3,
-                        ':id2' => 4,
-                        ':id3' => 5
-                    ]
-            ],
-            $query->getParams()
-        );
+        Query::create()
+            ->set(['title' => 'hello world'])
+            ->getParams();
     }
 
+    /**
+     * @throws \rave\core\exception\IncorrectQueryException
+     * @expectedException \rave\core\exception\IncorrectQueryException
+     * @expectedExceptionMessage Not an array nor an Entity during statement SET
+     */
+    public function testSetIncorrect()
+    {
+        Query::create()
+            ->update('articles')
+            ->set('test');
+    }
+
+    /**
+     * @throws \rave\core\exception\IncorrectQueryException
+     * @expectedException \rave\core\exception\IncorrectQueryException
+     * @expectedExceptionMessage Cannot add SET statement
+     */
+    public function testSetMissingUpdate()
+    {
+        Query::create()
+            ->set(['title' => 'hello world'])
+            ->where(['id', '=', 2])
+            ->getParams();
+    }
+
+    /**
+     * @throws \rave\core\exception\IncorrectQueryException
+     * @expectedException \rave\core\exception\IncorrectQueryException
+     * @expectedExceptionMessage Incomplete UPDATE statement
+     */
+    public function testSetMissingWhere()
+    {
+        Query::create()
+            ->update('articles')
+            ->set(['title' => 'hello world'])
+            ->getParams();
+    }
+
+    /*
+     * Test where
+     */
+
+    /**
+     * @throws \rave\core\exception\IncorrectQueryException
+     * @expectedException \rave\core\exception\IncorrectQueryException
+     * @expectedExceptionMessage Cannot add a WHERE statement
+     */
     public function testWhereDuplicate()
     {
-        $this->setExpectedException(IncorrectQueryException::class, 'Cannot add a WHERE statement');
-        $query = Query::newQuery()->select()->from('articles')->where(['id', '=', 2])->where(['id', '=', 3]);
+        Query::create()
+            ->select()
+            ->from('articles')
+            ->where(['id', '=', 2])
+            ->where(['id', '=', 3]);
     }
 
+    /**
+     * @throws \rave\core\exception\IncorrectQueryException
+     * @expectedException \rave\core\exception\IncorrectQueryException
+     * @expectedExceptionMessage Cannot add a WHERE statement
+     */
     public function testWhereIncomplete()
     {
-        $this->setExpectedException(IncorrectQueryException::class, 'Cannot add a WHERE statement');
-        $query = Query::newQuery()->where(['id', '=', 2]);
+        Query::create()
+            ->where(['id', '=', 2]);
     }
 
+    /**
+     * @throws \rave\core\exception\IncorrectQueryException
+     * @expectedException \rave\core\exception\IncorrectQueryException
+     * @expectedExceptionMessage Bad where construction
+     */
     public function testWhereIncorrectArray()
     {
-        $this->setExpectedException(IncorrectQueryException::class, 'Bad where construction');
-        Query::newQuery()
-             ->select()
-             ->from('articles')
-             ->where(['test', '=', 2, 4]);
+        Query::create()
+            ->select()
+            ->from('articles')
+            ->where(['test', '=', 2, 4]);
     }
 
-//TODO : update, delete, add queries
+    public function testAppendSQL()
+    {
+        $query = Query::create()
+            ->select()
+            ->from('articles')
+            ->appendSQL('GROUP BY id');
+        $this->assertEquals(['statement' => 'SELECT * FROM articles GROUP BY id'], $query->getParams());
+    }
+
+    public function testGetters()
+    {
+        $query = Query::create()->select()->from('articles')->where(['id', '=', 2]);
+        $this->assertEquals(['statement' => $query->getStatement(), 'values' => $query->getValues()],
+            $query->getParams());
+    }
+
+    /**
+     * @expectedException \rave\core\exception\IncorrectQueryException
+     * @expectedExceptionMessage The query is incorrect
+     */
+    public function testFindInvalid()
+    {
+        Query::create()->find();
+    }
+
+    /**
+     * @expectedException \rave\core\exception\IncorrectQueryException
+     * @expectedExceptionMessage The query is incorrect
+     * @throws \rave\core\exception\IncorrectQueryException
+     */
+    public function testFirstInvalid()
+    {
+        Query::create()->first();
+    }
+
+    /*
+     * Testing queries and fetching Entities from database
+     */
+
+    /**
+     * Creates the articles Database
+     */
+    public function testInitDB()
+    {
+        $query = new Query();
+        $query->setQuery('CREATE TABLE IF NOT EXISTS test.articles(
+    id INT PRIMARY KEY NOT NULL AUTO_INCREMENT UNIQUE ,
+    title VARCHAR(300) NOT NULL,
+    content TEXT NOT NULL
+);');
+        $query->execute();
+    }
+
+    /**
+     * @depends testInitDB
+     */
+    public function testInsertDB()
+    {
+        $query = new Query();
+
+        $model = new ArticlesModel();
+        $entity = new ArticlesEntity();
+        $entity->set(['title' => 'Hello World', 'content' => 'thisisacontent']);
+        $query->insertInto($model)->values($entity)->execute();
+    }
+
+    /**
+     * @depends testInsertDB
+     */
+    public function testSelectDB()
+    {
+        $model = new ArticlesModel();
+        $query = new Query();
+        $entity_manual = new ArticlesEntity();
+        $entity_manual->set(['title' => 'Hello World', 'content' => 'thisisacontent']);
+
+        $query->select()->from($model);
+        $entities = $query->find();
+
+        $query = Query::create()->select()->from($model);
+        $entity = $query->find('first');
+
+        $entity_manual->id = $entity->id; // YEAH !! Databases
+
+        $this->assertEquals($entity_manual, $entity);
+        $this->assertEquals($entities[0], $entity);
+
+    }
+
+    /**
+     * @depends testSelectDB
+     */
+    public function testUpdateDB()
+    {
+        $model = new ArticlesModel();
+
+        $query = Query::create()->select()->from($model);
+        $entity = $query->find('first');
+
+        $entity->title = 'Hell o World';
+        $entity->content = 'This is a content';
+
+        Query::create()
+            ->update($model)
+            ->set($entity)
+            ->where(['id', '=', $entity->id])
+            ->execute();
+
+        $query = Query::create()
+            ->select()
+            ->from($model);
+
+        $entity_after_update = $query->first();
+
+        $this->assertEquals($entity, $entity_after_update);
+    }
+
+    /**
+     * @depends testUpdateDB
+     */
+    public function testDeleteDB()
+    {
+        $model = new ArticlesModel();
+        $entity = Query::create()->select()->from($model)->find('first');
+
+        Query::create()
+            ->delete()
+            ->from($model)
+            ->where(['id', '=', $entity->id])
+            ->execute();
+
+        $this->assertEquals([], Query::create()->select()->from($model)->find());
+    }
+
 }

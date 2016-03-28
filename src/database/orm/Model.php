@@ -75,7 +75,7 @@ abstract class Model
      */
     public function newQuery($statement = null, array $values = null)
     {
-        return Query::newQuery($statement, $values);
+        return Query::create($statement, $values);
     }
 
     /**
@@ -207,8 +207,7 @@ abstract class Model
      */
     public function get($primary)
     {
-        $entity_name = isset(static::$entity_name) ? static::$entity_name
-            : str_replace('model', 'entity', str_replace('Model', 'Entity', static::class));
+        $entity_name = $this->getEntity();
 
         if (!class_exists($entity_name)) {
             throw new EntityException('There is no matching entity ' . $entity_name . 'for this model' . static::class);
@@ -233,9 +232,17 @@ abstract class Model
                       ->select()
                       ->from(static::$table);
 
-        $entity_name = isset(static::$entity_name) ? static::$entity_name
-            : str_replace('model', 'entity', str_replace('Model', 'Entity', static::class));
+        $entity_name = $this->getEntity();
 
         return DB::get()->queryOne($query, $entity_name);
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getEntity()
+    {
+        return isset(static::$entity_name) ? static::$entity_name
+            : str_replace('model', 'entity', str_replace('Model', 'Entity', static::class));
     }
 }

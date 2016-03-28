@@ -70,7 +70,8 @@ class MySQLDriverPDO implements GenericDriver
                 if (null === $entity_name) {
                     $result = $sql->fetch(PDO::FETCH_OBJ);
                 } else {
-                    $result = $sql->fetch(PDO::FETCH_CLASS, $entity_name);
+                    $sql->setFetchMode(PDO::FETCH_CLASS, $entity_name);
+                    $result = $sql->fetch();
                 }
 
                 return $result === false ? null : $result;
