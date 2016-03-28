@@ -26,10 +26,6 @@ use rave\core\exception\UnknownPropertyException;
 
 abstract class Model
 {
-    const SQL = 'sql';
-    const VALUES = 'values';
-    const DRIVER = 'driver';
-
     protected static $table;
 
     protected static $entity_name;
@@ -137,12 +133,12 @@ abstract class Model
         }
 
         $this->newQuery()
-             ->update(static::$table)
-             ->set($entity)
-             ->where([
-                 'conditions' => $conditions,
-             ])
-             ->execute();
+            ->update(static::$table)
+            ->set($entity)
+            ->where([
+                'conditions' => $conditions,
+            ])
+            ->execute();
     }
 
     /**
@@ -154,9 +150,9 @@ abstract class Model
     public function add(Entity $entity)
     {
         $this->newQuery()
-             ->insertInto(static::$table)
-             ->values($entity)
-             ->execute();
+            ->insertInto(static::$table)
+            ->values($entity)
+            ->execute();
     }
 
     /**
@@ -184,10 +180,10 @@ abstract class Model
         }
 
         $this->newQuery()
-             ->delete()
-             ->from(static::$table)
-             ->where(['conditions' => $conditions])
-             ->execute();
+            ->delete()
+            ->from(static::$table)
+            ->where([$conditions])
+            ->execute();
     }
 
     /**
@@ -207,7 +203,7 @@ abstract class Model
      */
     public function get($primary)
     {
-        $entity_name = $this->getEntity();
+        $entity_name = $this->getEntityName();
 
         if (!class_exists($entity_name)) {
             throw new EntityException('There is no matching entity ' . $entity_name . 'for this model' . static::class);
@@ -219,30 +215,38 @@ abstract class Model
         }
 
         $query = $this->newQuery()
-                      ->select()
-                      ->from(static::$table)
-                      ->where(['conditions' => $statement]);
-
-        return DB::get()->queryOne($query, $entity_name);
-    }
-
-    public function getAll()
-    {
-        $query = $this->newQuery()
-                      ->select()
-                      ->from(static::$table);
-
-        $entity_name = $this->getEntity();
+            ->select()
+            ->from(static::$table)
+            ->where([$statement]);
 
         return DB::get()->queryOne($query, $entity_name);
     }
 
     /**
+     * returns the Entity class name
+     *
      * @return mixed
      */
-    public function getEntity()
+    public static function getEntityName()
     {
         return isset(static::$entity_name) ? static::$entity_name
             : str_replace('model', 'entity', str_replace('Model', 'Entity', static::class));
+    }
+
+    /**
+     * Returns all the elements of the Table
+     *
+     * @return array|null
+     * @throws IncorrectQueryException
+     */
+    public function getAll()
+    {
+        $query = $this->newQuery()
+            ->select()
+            ->from(static::$table);
+
+        $entity_name = $this->getEntityName();
+
+        return DB::get()->queryOne($query, $entity_name);
     }
 }

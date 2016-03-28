@@ -45,7 +45,6 @@ class Query
     private $query_type;
 
     private $build;
-    private $entity;
 
     /**
      * Returns a new Query instance
@@ -189,7 +188,6 @@ class Query
         if (is_array($data)) {
             $rows = $data;
         } elseif (is_subclass_of($data, Entity::class, false)) {
-            $this->entity = get_class($data);
             $rows = get_object_vars($data);
         } else {
             throw new IncorrectQueryException('Not an array nor an Entity during statement SET');
@@ -228,41 +226,46 @@ class Query
     /**
      * Executes the query
      * if `$options = 'first'` then, it will use `$this->first()`
+     * if $entity_name is defined, will return the result as Entity
      *
      * @see GenericDriver::queryOne()
      * @param string|null $options [optional]
+     * @param null $entity_name
      * @return array|null
      * @throws IncorrectQueryException if the query is not correct
      */
-    public function find($options = null)
+    public function find($options = null, $entity_name = null)
     {
         if (!isset($this->query_type)) {
             throw new IncorrectQueryException('The query is incorrect');
         }
 
         if ($options === 'first') {
-            return $this->first();
+            return $this->first($entity_name);
         }
 
-        return DB::get()->query($this, $this->entity);
+        return DB::get()->query($this, $entity_name);
 
     }
 
     /**
      * Return the first matching value of the query
      *
+     * if $entity_name is defined, will return the result as Entity
+     *
      * @see queryOne()
      * @see find('first')
+     * @param string|null $entity_name the name of the Entity class to use
      * @return mixed
      * @throws IncorrectQueryException
      */
-    public function first()
+    public function first($entity_name = null)
     {
         if (!isset($this->query_type)) {
             throw new IncorrectQueryException('The query is incorrect');
         }
 
-        return DB::get()->queryOne($this, $this->entity);
+        return DB::get()->queryOne($this, $entity_name);
     }
 
     /**
@@ -400,9 +403,6 @@ class Query
 
             $this->build['from'] = rtrim($this->build['from'], ', ') . ' ';
         } else {
-            if (is_subclass_of($model, Model::class, false)) {
-                $this->entity = $model->getEntity();
-            }
             $this->build['from'] .= self::createFrom($model) . ' ';
         }
 
@@ -482,7 +482,6 @@ class Query
         if (is_array($data)) {
             $rows = $data;
         } elseif (is_subclass_of($data, Entity::class, false)) {
-            $this->entity = get_class($data);
             $rows = get_object_vars($data);
         } else {
             throw new IncorrectQueryException('Not an array, nor an Entity in INSERT declaration');

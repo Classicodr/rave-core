@@ -748,10 +748,10 @@ class QueryTest extends PHPUnit_Framework_TestCase
         $entity_manual->set(['title' => 'Hello World', 'content' => 'thisisacontent']);
 
         $query->select()->from($model);
-        $entities = $query->find();
+        $entities = $query->find(null, $model->getEntityName());
 
         $query = Query::create()->select()->from($model);
-        $entity = $query->find('first');
+        $entity = $query->find('first', $model->getEntityName());
 
         $entity_manual->id = $entity->id; // YEAH !! Databases
 
@@ -768,7 +768,7 @@ class QueryTest extends PHPUnit_Framework_TestCase
         $model = new ArticlesModel();
 
         $query = Query::create()->select()->from($model);
-        $entity = $query->find('first');
+        $entity = $query->find('first', $model->getEntityName());
 
         $entity->title = 'Hell o World';
         $entity->content = 'This is a content';
@@ -783,7 +783,7 @@ class QueryTest extends PHPUnit_Framework_TestCase
             ->select()
             ->from($model);
 
-        $entity_after_update = $query->first();
+        $entity_after_update = $query->first( $model->getEntityName());
 
         $this->assertEquals($entity, $entity_after_update);
     }
@@ -794,7 +794,7 @@ class QueryTest extends PHPUnit_Framework_TestCase
     public function testDeleteDB()
     {
         $model = new ArticlesModel();
-        $entity = Query::create()->select()->from($model)->find('first');
+        $entity = Query::create()->select()->from($model)->find('first', $model->getEntityName());
 
         Query::create()
             ->delete()
