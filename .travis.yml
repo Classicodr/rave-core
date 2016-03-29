@@ -15,7 +15,7 @@ before_install:
   - mysql -e "create database IF NOT EXISTS test;" -uroot
 
 before_script:
-  - if [ "$TRAVIS_PHP_VERSION" != "hhvm" ] || [  "$TRAVIS_PHP_VERSION" != "7.0" ]; then phpenv config-rm xdebug.ini; fi
+  - if [ "$TRAVIS_PHP_VERSION" != "hhvm" ] && [  "$TRAVIS_PHP_VERSION" != "7.0" ]; then phpenv config-rm xdebug.ini; fi
   - composer self-update
   - composer install --prefer-dist --no-interaction
 
