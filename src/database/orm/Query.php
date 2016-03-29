@@ -174,7 +174,7 @@ class Query
      * ```
      * or an Entity
      *
-     * @param array|Entity $data
+     * @param Entity $data
      * @return $this
      * @throws IncorrectQueryException
      * @see rave\core\database\orm\Query::update();
@@ -466,7 +466,7 @@ class Query
      * ['title' => 'Hello World', 'name' => 'Jackson Five']
      * ```
      *
-     * @param array|Entity $data
+     * @param Entity $data
      * @return $this
      * @throws IncorrectQueryException
      * @see insertInto()

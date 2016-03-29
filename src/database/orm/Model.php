@@ -49,7 +49,7 @@ abstract class Model
      * @param string $statement SQL statement
      * @param array $values [optional]
      * PDO SQL injection security
-     * @return Model
+     * @return Query
      * @deprecated use newQuery() instead
      * @see newQuery()
      */
@@ -65,7 +65,7 @@ abstract class Model
      * newQuery("SELECT * FROM example WHERE id = :id",[':id' => 2 ])
      * ```
      *
-     * @param null $statement
+     * @param string $statement
      * @param array $values
      * @return Query
      */
