@@ -35,4 +35,9 @@ after_script:
     fi
 
 notifications:
-  email: false 
+  email: false
+
+scache:
+    directories:
+      - $HOME/.composer/cache
+
