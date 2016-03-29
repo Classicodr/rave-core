@@ -25,7 +25,7 @@ before_script:
     fi
 
 script:
-  -  phpunit --configuration phpunit.xml.dist PHPUNIT_FLAGS
+  -  phpunit --configuration phpunit.xml.dist $PHPUNIT_FLAGS
 
 after_script:
   - |
