@@ -1,0 +1,15 @@
+filter:
+    excluded_paths:
+        - 'tests/*'
+checks:
+    php:
+        uppercase_constants: true
+        use_self_instead_of_fqcn: true
+        simplify_boolean_return: true
+        return_doc_comments: true
+
+before_commands:
+    - 'composer install --dev --prefer-source'
+
+tools:
+    external_code_coverage: true
