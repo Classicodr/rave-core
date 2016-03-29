@@ -39,10 +39,30 @@ class Query
     const UPDATE = 3;
     const DELETE = 4;
 
+    private $requirements = [
+        self::INSERT => [
+            'name' => 'INSERT',
+            'require' => ['insert_into', 'insert_into_values']
+        ],
+        self::SELECT => [
+            'name' => 'SELECT',
+            'require' => ['select', 'from'],
+            'uses' => ['select', 'from', 'where']
+        ],
+        self::UPDATE => [
+            'name' => 'UPDATE',
+            'require' => ['update', 'update_set', 'where']
+        ],
+        self::DELETE => [
+            'name' => 'DELETE',
+            'require' => ['delete', 'from', 'where']
+        ],
+    ];
+
     private $statement;
     private $values;
 
-    private $query_type;
+    private $queryType;
 
     private $build;
 
@@ -53,17 +73,17 @@ class Query
      * newQuery("SELECT * FROM example WHERE id = :id",[':id' => 2])
      * ```
      *
-     * @param null $statement
-     * @param array $values
+     * @param string|null $statement
+     * @param array|null $values
      * @return $this
      */
-    public static function create($statement = null, array $values = [])
+    public static function create($statement = null, array $values = null)
     {
         if (isset($statement)) {
-            return Query::create()->setQuery($statement, $values);
+            return self::create()->setQuery($statement, $values);
         }
 
-        return new Query;
+        return new self;
     }
 
     /**
@@ -76,7 +96,7 @@ class Query
      */
     public function setQuery($statement, array $values = null)
     {
-        $this->query_type = self::CUSTOM;
+        $this->queryType = self::CUSTOM;
         $this->statement = $statement;
 
         if (isset($values)) {
@@ -97,11 +117,11 @@ class Query
      */
     public function insertInto($model)
     {
-        if (isset($this->build['insert_into'], $this->query_type)) {
+        if (isset($this->build['insert_into'], $this->queryType)) {
             throw new IncorrectQueryException('Cannot add INSERT INTO statement');
         }
 
-        $this->query_type = self::INSERT;
+        $this->queryType = self::INSERT;
         $this->build['insert_into'] = 'INSERT INTO ';
 
         if (is_string($model)) {
@@ -126,11 +146,11 @@ class Query
      */
     public function delete()
     {
-        if (isset($this->query_type)) {
+        if (isset($this->queryType)) {
             throw new IncorrectQueryException('Cannot add DELETE statement');
         }
 
-        $this->query_type = self::DELETE;
+        $this->queryType = self::DELETE;
         $this->build['delete'] = 'DELETE ';
 
         return $this;
@@ -148,11 +168,11 @@ class Query
      */
     public function update($model)
     {
-        if (isset($this->build['update'], $this->query_type)) {
+        if (isset($this->build['update'], $this->queryType)) {
             throw new IncorrectQueryException('Cannot add UPDATE statement');
         }
 
-        $this->query_type = self::UPDATE;
+        $this->queryType = self::UPDATE;
         $this->build['update'] = 'UPDATE ';
 
         if (is_string($model)) {
@@ -181,7 +201,7 @@ class Query
      */
     public function set($data)
     {
-        if (isset($this->build['update_set']) || !isset($this->query_type) || $this->query_type !== self::UPDATE) {
+        if (isset($this->build['update_set']) || !isset($this->queryType) || $this->queryType !== self::UPDATE) {
             throw new IncorrectQueryException('Cannot add SET statement');
         }
 
@@ -236,7 +256,7 @@ class Query
      */
     public function find($options = null, $entity_name = null)
     {
-        if (!isset($this->query_type)) {
+        if (!isset($this->queryType)) {
             throw new IncorrectQueryException('The query is incorrect');
         }
 
@@ -261,7 +281,7 @@ class Query
      */
     public function first($entity_name = null)
     {
-        if (!isset($this->query_type)) {
+        if (!isset($this->queryType)) {
             throw new IncorrectQueryException('The query is incorrect');
         }
 
@@ -308,7 +328,7 @@ class Query
      */
     public function where(array $params)
     {
-        if (isset($this->build['where']) || !isset($this->query_type) || $this->query_type === self::INSERT) {
+        if (isset($this->build['where']) || !isset($this->queryType) || $this->queryType === self::INSERT) {
             throw new IncorrectQueryException('Cannot add a WHERE statement');
         }
 
@@ -316,7 +336,7 @@ class Query
             $this->build['where'] = 'WHERE ' . $params[self::CONDITIONS] . ' ';
 
             if (isset($params[self::VALUES])) {
-                if (self::UPDATE === $this->query_type) {
+                if (self::UPDATE === $this->queryType) {
                     $this->values = array_merge($this->values, $params[self::VALUES]);
                 } else {
                     $this->values = $params[self::VALUES];
@@ -388,8 +408,8 @@ class Query
      */
     public function from($model)
     {
-        if (isset($this->build['from']) || !isset($this->query_type)
-            || ($this->query_type !== self::SELECT && $this->query_type !== self::DELETE)
+        if (isset($this->build['from']) || !isset($this->queryType)
+            || ($this->queryType !== self::SELECT && $this->queryType !== self::DELETE)
         ) {
             throw new IncorrectQueryException('Cannot add FROM statement');
         }
@@ -441,11 +461,11 @@ class Query
      */
     public function select($params = '*')
     {
-        if (isset($this->query_type) || isset($this->build['select'])) {
+        if (isset($this->queryType) || isset($this->build['select'])) {
             throw new IncorrectQueryException('Cannot add a select statement');
         }
 
-        $this->query_type = self::SELECT;
+        $this->queryType = self::SELECT;
         $this->build['select'] = 'SELECT ';
 
         if (is_string($params)) {
@@ -473,8 +493,8 @@ class Query
      */
     public function values($data)
     {
-        if (isset($this->build['insert_into_values']) || !isset($this->query_type)
-            || $this->query_type !== self::INSERT
+        if (isset($this->build['insert_into_values']) || !isset($this->queryType)
+            || $this->queryType !== self::INSERT
         ) {
             throw new IncorrectQueryException('Cannot add (...)VALUES(...) statement');
         }
@@ -531,107 +551,35 @@ class Query
      */
     private function concat()
     {
-        if (!isset($this->query_type)) {
+        if (!isset($this->queryType)) {
             throw new IncorrectQueryException('Cannot concat inexisting statement');
         }
 
-        switch ($this->query_type) {
-            case self::INSERT:
-                $this->createInsert();
-                break;
-
-            case self::SELECT:
-                $this->createSelect();
-                break;
-
-            case self::UPDATE:
-                $this->createUpdate();
-                break;
-
-            case self::DELETE:
-                $this->createDelete();
-                break;
-
-            default:
-                break;
+        if ($this->queryType === self::CUSTOM) {
+            return true;
+        } else {
+            $queryType = $this->queryType;
         }
 
-        if (isset($this->build['more'])) {
-            $this->statement .= $this->build['more'];
+        if (array_diff($this->requirements[$queryType]['require'], array_keys($this->build))) {
+            throw new IncorrectQueryException('Incomplete ' . $this->requirements[$queryType]['name'] . ' statement');
         }
+
+        $this->statement = null;
+
+        if (isset($this->requirements[$queryType]['uses'])) {
+            foreach ($this->requirements[$queryType]['uses'] as $use) {
+                $this->statement .= isset($this->build[$use]) ? $this->build[$use] : null;
+            }
+        } else {
+            foreach ($this->requirements[$queryType]['require'] as $require) {
+                $this->statement .= $this->build[$require];
+            }
+        }
+
+        $this->statement .= isset($this->build['more']) ? $this->build['more'] : null;
 
         return true;
-    }
-
-    /**
-     * Verifies and create the INSERT query, if INSERT INTO and VALUES are defined
-     *
-     * @throws IncorrectQueryException
-     */
-    private function createInsert()
-    {
-        if (!isset($this->build['insert_into'], $this->build['insert_into_values'])) {
-            throw new IncorrectQueryException('Incomplete INSERT statement');
-        }
-
-        $this->statement = $this->build['insert_into'] . $this->build['insert_into_values'];
-
-        return true;
-    }
-
-    /**
-     * Verifies and create the SELECT query if at least SELECT and FROM are defined
-     *
-     * @throws IncorrectQueryException
-     */
-    private function createSelect()
-    {
-        if (!isset($this->build['select'], $this->build['from'])) {
-            throw new IncorrectQueryException('Incomplete SELECT statement');
-        }
-
-        $this->statement = $this->build['select'] . $this->build['from'];
-
-        if (isset($this->build['where'])) {
-            $this->statement .= $this->build['where'];
-        }
-
-        return true;
-    }
-
-    /**
-     * Verifies and create the SELECT query if UPDATE, SET and WHERE are defined
-     *
-     * @throws IncorrectQueryException
-     */
-    private function createUpdate()
-    {
-        if (!isset($this->build['update'], $this->build['update_set'], $this->build['where'])) {
-            throw new IncorrectQueryException('Incomplete UPDATE statement');
-        }
-
-        $this->statement = $this->build['update'] . $this->build['update_set']
-            . $this->build['where'];
-
-        return true;
-
-    }
-
-    /**
-     * Verifies and create the SELECT query if at least DELETE, FROM and WHERE are defined
-     *
-     * @throws IncorrectQueryException
-     */
-    private function createDelete()
-    {
-        if (!isset($this->build['delete'], $this->build['from'], $this->build['where'])) {
-            throw new IncorrectQueryException('Incomplete DELETE statement');
-        }
-
-        $this->statement = $this->build['delete'] . $this->build['from'] . $this->build['where'];
-
-        return true;
-
     }
 
     /**
