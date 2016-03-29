@@ -117,13 +117,33 @@ class Query
      */
     public function insertInto($model)
     {
-        $this->checkQueryTypeInit('insert_into', 'INSERT INTO');
-
-        $this->queryType = self::INSERT;
-        $this->build['insert_into'] = 'INSERT INTO ' . self::getModelName($model);
+        $this->optimiserInsertIntoAndUpdate($model, self::INSERT, 'insert_into', 'INSERT INTO');
 
         return $this;
     }
+
+    /**
+     * @param $model
+     * @param $type
+     * @param $build
+     * @param $string
+     * @throws IncorrectQueryException
+     */
+    private function optimiserInsertIntoAndUpdate($model, $type, $build, $string)
+    {
+        $this->checkQueryTypeInit($build, $string);
+
+        $this->queryType = $type;
+        $this->build[$build] = $string . ' ' . self::getModelName($model);
+    }
+
+    /**
+     * @param string|Model $model
+     * @param $statementId
+     * @param $statementName
+     * @param string $statement update or insert_into
+     * @throws IncorrectQueryException
+     */
 
     /**
      * Check if a statement is initialized
@@ -141,14 +161,6 @@ class Query
 
         return true;
     }
-
-    /**
-     * @param string|Model $model
-     * @param $statementId
-     * @param $statementName
-     * @param string $statement update or insert_into
-     * @throws IncorrectQueryException
-     */
 
     /**
      * @param Model|string $model
@@ -197,10 +209,7 @@ class Query
      */
     public function update($model)
     {
-        $this->checkQueryTypeInit('update', 'UPDATE');
-
-        $this->queryType = self::UPDATE;
-        $this->build['update'] = 'UPDATE ' . $this->getModelName($model);
+        $this->optimiserInsertIntoAndUpdate($model, self::UPDATE, 'update', 'UPDATE');
 
         return $this;
     }
