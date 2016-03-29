@@ -49,7 +49,7 @@ abstract class Model
      * @param string $statement SQL statement
      * @param array $values [optional]
      * PDO SQL injection security
-     * @return Model
+     * @return Query
      * @deprecated use newQuery() instead
      * @see newQuery()
      */
