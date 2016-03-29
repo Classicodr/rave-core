@@ -19,11 +19,9 @@
 
 namespace rave\core\exception;
 
-
 class UnknownPropertyException extends \Exception
 {
     const ERROR_CODE = 6;
-
 
     public function __construct($message)
     {

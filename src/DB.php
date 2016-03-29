@@ -26,11 +26,11 @@
 
 namespace rave\core;
 
-
 use rave\core\database\driver\GenericDriver;
 
 /**
  * Class DB
+ *
  * @package rave\core
  */
 class DB

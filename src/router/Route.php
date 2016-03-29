@@ -95,7 +95,6 @@ class Route
                 Error::create('Router: method does not exists', 500);
             }
 
-
             return call_user_func_array($this->callable, $this->matches);
         }
     }
@@ -136,7 +135,6 @@ class Route
      *
      * @param array $match
      * @return string
-     *
      * @see match()
      */
     private function parameterMatch(array $match)

@@ -30,7 +30,6 @@ use rave\core\exception\UnknownDriverException;
 
 /**
  * Class DriverFactory
- *
  * Creates a database instance given the datasource
  *
  * @package rave\core\database
@@ -57,7 +56,6 @@ class DriverFactory
      *
      * @param string $dbname then name of the database configuration to use
      * @return GenericDriver the datasource Object
-     *
      * @throws UnknownDriverException
      */
     public static function get($dbname = 'default')

@@ -10,10 +10,9 @@
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  S
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
  *
- * define('WEB_ROOT
- * , http://localhost' *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
@@ -42,9 +41,9 @@ require_once ROOT . '/vendor/autoload.php';
  * Include the autoloader
  */
 
-
 Config::addArray([
     'debug' => true,
+
     'datasources' => [
         'test' => [
             'driver' => DriverFactory::MYSQL_PDO,

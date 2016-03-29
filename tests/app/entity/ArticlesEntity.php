@@ -19,7 +19,7 @@
 
 namespace rave\tests\app\entity;
 
-use rave\core\database\ORM\Entity;
+use rave\core\database\orm\Entity;
 
 class ArticlesEntity extends Entity
 {

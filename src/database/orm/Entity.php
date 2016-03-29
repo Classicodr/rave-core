@@ -17,12 +17,13 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-namespace rave\core\database\ORM;
+namespace rave\core\database\orm;
 
 use rave\core\exception\UnknownPropertyException;
 
 /**
  * Class Entity
+ *
  * @package rave\core
  */
 abstract class Entity
@@ -31,7 +32,6 @@ abstract class Entity
 
     /**
      * Entity constructor.
-     *
      * ```php
      * $properties = [
      *      "property" => "default value",
@@ -40,13 +40,14 @@ abstract class Entity
      *
      * @param array $properties
      * @param array $options [optional]
-     *
      * additionnals options
      */
     public function __construct(array $properties, array $options = [])
     {
         foreach ($properties as $property => $value) {
-            $this->$property = $value;
+            if (!isset($this->$property)) {
+                $this->$property = $value;
+            }
         }
 
         $this->options = $options;
@@ -87,6 +88,7 @@ abstract class Entity
 
     /**
      * Returns the set of primary keys
+     *
      * @return string|array|null
      */
     public function getPrimaryKeys()

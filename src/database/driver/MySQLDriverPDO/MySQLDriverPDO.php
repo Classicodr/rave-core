@@ -22,7 +22,7 @@ namespace rave\core\database\driver\MySQLDriverPDO;
 use PDO;
 use PDOException;
 use rave\core\database\driver\GenericDriver;
-use rave\core\database\ORM\Query;
+use rave\core\database\orm\Query;
 use rave\core\Error;
 
 class MySQLDriverPDO implements GenericDriver
@@ -33,10 +33,10 @@ class MySQLDriverPDO implements GenericDriver
     {
         $port = isset($info['port']) ? ';port=' . $info['port'] : null;
 
-        $this->instance =
-            new PDO('mysql:dbname=' . $info['database'] . ';host=' . $info['host'] . $port,
-                $info['login'], $info['password'],
-                [PDO::MYSQL_ATTR_INIT_COMMAND => 'SET NAMES utf8']);
+        $this->instance
+            = new PDO('mysql:dbname=' . $info['database'] . ';host=' . $info['host'] . $port,
+            $info['login'], $info['password'],
+            [PDO::MYSQL_ATTR_INIT_COMMAND => 'SET NAMES utf8']);
         $this->instance->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);;
     }
 
@@ -49,14 +49,12 @@ class MySQLDriverPDO implements GenericDriver
         return $this->queryDatabase($query, $entity_name, false);
     }
 
-
     /**
      * Executes the given query in the database
      *
      * @param Query $query
      * @param string $entity_name
      * @param bool $unique [optional]
-     *
      * fetch only one result
      * @return array|null the result, null if failed
      * @see query()
@@ -72,7 +70,8 @@ class MySQLDriverPDO implements GenericDriver
                 if (null === $entity_name) {
                     $result = $sql->fetch(PDO::FETCH_OBJ);
                 } else {
-                    $result = $sql->fetch(PDO::FETCH_CLASS, $entity_name);
+                    $sql->setFetchMode(PDO::FETCH_CLASS, $entity_name);
+                    $result = $sql->fetch();
                 }
 
                 return $result === false ? null : $result;
@@ -92,7 +91,6 @@ class MySQLDriverPDO implements GenericDriver
 
         return null;
     }
-
 
     /**
      * {@inheritdoc}

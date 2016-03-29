@@ -17,7 +17,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-namespace rave\core\database\ORM;
+namespace rave\core\database\orm;
 
 use rave\core\DB;
 use rave\core\exception\EntityException;
@@ -26,27 +26,9 @@ use rave\core\exception\UnknownPropertyException;
 
 abstract class Model
 {
-    const SQL = 'sql';
-    const VALUES = 'values';
-    const DRIVER = 'driver';
-
     protected static $table;
 
-    /**
-     * @var string $primary the primary key of the table
-     * @deprecated
-     * @see Entity
-     */
-    protected static $primary = 'id';
-
     protected static $entity_name;
-
-    /**
-     * @var Query $query
-     * @deprecated
-     * @see Query
-     */
-    private $query;
 
     /**
      * @return string <p>the name of the table associated to the model</p>
@@ -58,7 +40,6 @@ abstract class Model
 
     /**
      * Prepare the given query, to execute it, use either find() or first()
-     *
      * usage:
      * ```
      * $model->query("SELECT * FROM example",[':id' => 2])
@@ -67,30 +48,35 @@ abstract class Model
      *
      * @param string $statement SQL statement
      * @param array $values [optional]
-     *
      * PDO SQL injection security
-     *
      * @return Model
+     * @deprecated use newQuery() instead
+     * @see newQuery()
      */
-    public function query($statement, array $values = [])
+    public function setQuery($statement, array $values = [])
     {
-        $this->newQuery()->setQuery($statement, $values);
-
-        return $this;
+        return $this->newQuery($statement, $values);
     }
 
     /**
-     * Create a new Query
+     * Returns a new Query Object
+     * Can be used for directly define the query :
+     * ```
+     * newQuery("SELECT * FROM example WHERE id = :id",[':id' => 2 ])
+     * ```
      *
+     * @param null $statement
+     * @param array $values
      * @return Query
      */
-    public function newQuery()
+    public function newQuery($statement = null, array $values = null)
     {
-        new Query();
+        return Query::create($statement, $values);
     }
 
     /**
      * Get the last inserted ID
+     *
      * @return string
      */
     public function lastInsertId()
@@ -100,7 +86,6 @@ abstract class Model
 
     /**
      * Saves the entity (add if not exists or updates it)
-     *
      * If the Entity has multiple primary keys, only update will work
      *
      * @param Entity $entity
@@ -137,14 +122,15 @@ abstract class Model
         $conditions = '';
         if (is_string($primaries)) {
             $conditions = [$primaries, '=', $entity->$primaries];
-        } else if (is_array($primaries)) {
-            foreach ($entity->getPrimaryKeys() as $primary_key) {
-                $conditions['AND'][] = [$primary_key, '=', $entity->$primary_key];
-            }
         } else {
-            throw new UnknownPropertyException('Incorrect primary key setup');
+            if (is_array($primaries)) {
+                foreach ($entity->getPrimaryKeys() as $primary_key) {
+                    $conditions['AND'][] = [$primary_key, '=', $entity->$primary_key];
+                }
+            } else {
+                throw new UnknownPropertyException('Incorrect primary key setup');
+            }
         }
-
 
         $this->newQuery()
             ->update(static::$table)
@@ -169,10 +155,8 @@ abstract class Model
             ->execute();
     }
 
-
     /**
      * Deletes the entity
-     *
      *
      * @param Entity $entity
      * @throws IncorrectQueryException
@@ -185,24 +169,25 @@ abstract class Model
 
         if (is_string($primaries)) {
             $conditions = [$primaries, '=', $entity->$primaries];
-        } else if (is_array($primaries)) {
-            foreach ($entity->getPrimaryKeys() as $primary_key) {
-                $conditions['AND'][] = [$primary_key, '=', $entity->$primary_key];
-            }
         } else {
-            throw new UnknownPropertyException('Incorrect primary key setup');
+            if (is_array($primaries)) {
+                foreach ($entity->getPrimaryKeys() as $primary_key) {
+                    $conditions['AND'][] = [$primary_key, '=', $entity->$primary_key];
+                }
+            } else {
+                throw new UnknownPropertyException('Incorrect primary key setup');
+            }
         }
 
         $this->newQuery()
             ->delete()
             ->from(static::$table)
-            ->where(['conditions' => $conditions])
+            ->where([$conditions])
             ->execute();
     }
 
     /**
      * Gets the entity (use an array : `['id'=> $value]`)
-     *
      * in case of multiple primary keys use :
      * ```
      *  [
@@ -218,8 +203,7 @@ abstract class Model
      */
     public function get($primary)
     {
-        $entity_name = isset(static::$entity_name) ? static::$entity_name
-            : str_replace('model', 'entity', str_replace('Model', 'Entity', static::class));
+        $entity_name = $this->getEntityName();
 
         if (!class_exists($entity_name)) {
             throw new EntityException('There is no matching entity ' . $entity_name . 'for this model' . static::class);
@@ -230,23 +214,38 @@ abstract class Model
             $statement['AND'][] = [$index, '=', $item];
         }
 
-
         $query = $this->newQuery()
             ->select()
             ->from(static::$table)
-            ->where(['conditions' => $statement]);
+            ->where([$statement]);
 
         return DB::get()->queryOne($query, $entity_name);
     }
 
+    /**
+     * returns the Entity class name
+     *
+     * @return mixed
+     */
+    public static function getEntityName()
+    {
+        return isset(static::$entity_name) ? static::$entity_name
+            : str_replace('model', 'entity', str_replace('Model', 'Entity', static::class));
+    }
+
+    /**
+     * Returns all the elements of the Table
+     *
+     * @return array|null
+     * @throws IncorrectQueryException
+     */
     public function getAll()
     {
         $query = $this->newQuery()
             ->select()
             ->from(static::$table);
 
-        $entity_name = isset(static::$entity_name) ? static::$entity_name
-            : str_replace('model', 'entity', str_replace('Model', 'Entity', static::class));
+        $entity_name = $this->getEntityName();
 
         return DB::get()->queryOne($query, $entity_name);
     }

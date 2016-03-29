@@ -17,15 +17,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-namespace rave\core\exception;
+namespace rave\tests\app\model;
 
-class EntityException extends \Exception
+use rave\core\database\orm\Model;
+
+class UsersModel extends Model
 {
-    const ERROR_CODE = 8;
-
-    public function __construct($message)
-    {
-        parent::__construct($message, self::ERROR_CODE);
-    }
-
+    protected static $table = 'users';
 }

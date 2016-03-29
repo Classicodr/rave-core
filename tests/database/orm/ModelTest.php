@@ -17,15 +17,15 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-namespace rave\core\exception;
+namespace rave\tests\database\orm;
 
-class EntityException extends \Exception
+use rave\tests\app\model\ArticlesModel;
+
+class ModelTest extends \PHPUnit_Framework_TestCase
 {
-    const ERROR_CODE = 8;
 
-    public function __construct($message)
+    public function testConstructor()
     {
-        parent::__construct($message, self::ERROR_CODE);
+        $model = new ArticlesModel();
     }
-
 }
