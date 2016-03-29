@@ -557,27 +557,24 @@ class Query
 
         if ($this->queryType === self::CUSTOM) {
             return true;
-        } else {
-            $queryType = $this->queryType;
         }
 
-        if (array_diff($this->requirements[$queryType]['require'], array_keys($this->build))) {
-            throw new IncorrectQueryException('Incomplete ' . $this->requirements[$queryType]['name'] . ' statement');
+        if (array_diff($this->requirements[$this->queryType]['require'], array_keys($this->build))) {
+            throw new IncorrectQueryException('Incomplete ' . $this->requirements[$this->queryType]['name']
+                . ' statement');
         }
 
-        $this->statement = null;
+        $statement = '';
 
-        if (isset($this->requirements[$queryType]['uses'])) {
-            foreach ($this->requirements[$queryType]['uses'] as $use) {
-                $this->statement .= isset($this->build[$use]) ? $this->build[$use] : null;
-            }
-        } else {
-            foreach ($this->requirements[$queryType]['require'] as $require) {
-                $this->statement .= $this->build[$require];
-            }
+        $concat = isset($this->requirements[$this->queryType]['uses']) ? 'uses' : 'require';
+
+        foreach ($this->requirements[$this->queryType][$concat] as $use) {
+            $statement .= isset($this->build[$use]) ? $this->build[$use] : null;
         }
 
-        $this->statement .= isset($this->build['more']) ? $this->build['more'] : null;
+        $statement .= isset($this->build['more']) ? $this->build['more'] : null;
+
+        $this->statement = $statement;
 
         return true;
     }
