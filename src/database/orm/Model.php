@@ -239,7 +239,7 @@ abstract class Model
      * @return array|null
      * @throws IncorrectQueryException
      */
-    public function getAll()
+    public function all()
     {
         $query = $this->newQuery()
             ->select()
@@ -247,6 +247,6 @@ abstract class Model
 
         $entity_name = $this->getEntityName();
 
-        return DB::get()->queryOne($query, $entity_name);
+        return DB::get()->query($query, $entity_name);
     }
 }

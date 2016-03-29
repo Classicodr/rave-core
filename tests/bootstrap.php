@@ -44,6 +44,8 @@ require_once ROOT . '/vendor/autoload.php';
 Config::addArray([
     'debug' => true,
 
+    'namespace' => 'rave\\tests\\',
+
     'datasources' => [
         'test' => [
             'driver' => DriverFactory::MYSQL_PDO,
