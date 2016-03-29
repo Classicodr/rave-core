@@ -117,22 +117,41 @@ class Query
      */
     public function insertInto($model)
     {
-        if (isset($this->build['insert_into'], $this->queryType)) {
-            throw new IncorrectQueryException('Cannot add INSERT INTO statement');
-        }
-
-        $this->queryType = self::INSERT;
-        $this->build['insert_into'] = 'INSERT INTO ';
-
-        if (is_string($model)) {
-            $this->build['insert_into'] .= $model;
-        } elseif (is_subclass_of($model, Model::class, false)) {
-            $this->build['insert_into'] .= $model->getTable();
-        } else {
-            throw new IncorrectQueryException('Incorrect class in INSERT');
-        }
+        $this->insertIntoAndUpdateOptimizer($model, self::INSERT, 'insert_into', 'INSERT INTO');
 
         return $this;
+    }
+
+    /**
+     * @param string|Model $model
+     * @param $statementId
+     * @param $statementName
+     * @param string $statement update or insert_into
+     * @throws IncorrectQueryException
+     */
+    private function insertIntoAndUpdateOptimizer($model, $statementId, $statementName, $statement)
+    {
+        if (isset($this->build[$statementName], $this->queryType)) {
+            throw new IncorrectQueryException('Cannot add ' . $statement . ' statement');
+        }
+        $this->queryType = $statementId;
+        $this->build[$statementName] = $statement . ' ' . $this->getModelName($model);
+    }
+
+    /**
+     * @param Model|string $model
+     * @return string
+     * @throws IncorrectQueryException
+     */
+    private static function getModelName($model)
+    {
+        if (is_string($model)) {
+            return $model;
+        } elseif (is_subclass_of($model, Model::class, false)) {
+            return $model->getTable();
+        } else {
+            throw new IncorrectQueryException('Unsupported Model');
+        }
     }
 
     /**
@@ -168,20 +187,7 @@ class Query
      */
     public function update($model)
     {
-        if (isset($this->build['update'], $this->queryType)) {
-            throw new IncorrectQueryException('Cannot add UPDATE statement');
-        }
-
-        $this->queryType = self::UPDATE;
-        $this->build['update'] = 'UPDATE ';
-
-        if (is_string($model)) {
-            $this->build['update'] .= $model . ' ';
-        } elseif (is_subclass_of($model, Model::class, false)) {
-            $this->build['update'] .= $model->getTable() . ' ';
-        } else {
-            throw new IncorrectQueryException('Incorrect parameter on UPDATE');
-        }
+        $this->insertIntoAndUpdateOptimizer($model, self::UPDATE, 'update', 'UPDATE');
 
         return $this;
     }
@@ -224,7 +230,7 @@ class Query
 
         $columns = rtrim($columns, ', ');
 
-        $this->build['update_set'] = 'SET ' . $columns . ' ';
+        $this->build['update_set'] = ' SET ' . $columns . ' ';
 
         if (isset($clean)) {
             $this->values = $clean;
@@ -418,31 +424,15 @@ class Query
 
         if (is_array($model)) {
             foreach ($model as $item) {
-                $this->build['from'] .= self::createFrom($item) . ', ';
+                $this->build['from'] .= self::getModelName($item) . ', ';
             }
 
             $this->build['from'] = rtrim($this->build['from'], ', ') . ' ';
         } else {
-            $this->build['from'] .= self::createFrom($model) . ' ';
+            $this->build['from'] .= self::getModelName($model) . ' ';
         }
 
         return $this;
-    }
-
-    /**
-     * @param Model|string $model
-     * @return string
-     * @throws IncorrectQueryException
-     */
-    private static function createFrom($model)
-    {
-        if (is_string($model)) {
-            return $model;
-        } elseif (is_subclass_of($model, Model::class, false)) {
-            return $model->getTable();
-        } else {
-            throw new IncorrectQueryException('Unsupported Model value in FROM : ' . $model);
-        }
     }
 
     /**

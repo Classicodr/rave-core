@@ -185,7 +185,7 @@ class QueryTest extends PHPUnit_Framework_TestCase
     /**
      * @throws \rave\core\exception\IncorrectQueryException
      * @expectedException \rave\core\exception\IncorrectQueryException
-     * @expectedExceptionMessage Incorrect class in INSERT
+     * @expectedExceptionMessage Unsupported Model
      */
     public function testInsertIncorrect()
     {
@@ -436,7 +436,7 @@ class QueryTest extends PHPUnit_Framework_TestCase
     /**
      * @throws \rave\core\exception\IncorrectQueryException
      * @expectedException \rave\core\exception\IncorrectQueryException
-     * @expectedExceptionMessage Unsupported Model value in FROM : 5
+     * @expectedExceptionMessage Unsupported Model
      */
     public function testFromIncorrectArrayAttribute()
     {
@@ -448,7 +448,7 @@ class QueryTest extends PHPUnit_Framework_TestCase
     /**
      * @throws \rave\core\exception\IncorrectQueryException
      * @expectedException \rave\core\exception\IncorrectQueryException
-     * @expectedExceptionMessage Unsupported Model value in FROM : 5
+     * @expectedExceptionMessage Unsupported Model
      */
     public function testFromIncorrectAttribute()
     {
@@ -526,7 +526,7 @@ class QueryTest extends PHPUnit_Framework_TestCase
     /**
      * @throws \rave\core\exception\IncorrectQueryException
      * @expectedException \rave\core\exception\IncorrectQueryException
-     * @expectedExceptionMessage Incorrect parameter on UPDATE
+     * @expectedExceptionMessage Unsupported Model
      */
     public function testUpdateIncorrect()
     {
