@@ -117,9 +117,29 @@ class Query
      */
     public function insertInto($model)
     {
-        $this->insertIntoAndUpdateOptimizer($model, self::INSERT, 'insert_into', 'INSERT INTO');
+        $this->checkQueryTypeInit('insert_into', 'INSERT INTO');
+
+        $this->queryType = self::INSERT;
+        $this->build['insert_into'] = 'INSERT INTO ' . self::getModelName($model);
 
         return $this;
+    }
+
+    /**
+     * Check if a statement is initialized
+     *
+     * @param $statementName
+     * @param $statement
+     * @return bool
+     * @throws IncorrectQueryException
+     */
+    private function checkQueryTypeInit($statementName, $statement)
+    {
+        if (isset($this->build[$statementName], $this->queryType)) {
+            throw new IncorrectQueryException('Cannot add ' . $statement . ' statement');
+        }
+
+        return true;
     }
 
     /**
@@ -129,14 +149,6 @@ class Query
      * @param string $statement update or insert_into
      * @throws IncorrectQueryException
      */
-    private function insertIntoAndUpdateOptimizer($model, $statementId, $statementName, $statement)
-    {
-        if (isset($this->build[$statementName], $this->queryType)) {
-            throw new IncorrectQueryException('Cannot add ' . $statement . ' statement');
-        }
-        $this->queryType = $statementId;
-        $this->build[$statementName] = $statement . ' ' . $this->getModelName($model);
-    }
 
     /**
      * @param Model|string $model
@@ -165,9 +177,7 @@ class Query
      */
     public function delete()
     {
-        if (isset($this->queryType)) {
-            throw new IncorrectQueryException('Cannot add DELETE statement');
-        }
+        $this->checkQueryTypeInit('delete', 'DELETE');
 
         $this->queryType = self::DELETE;
         $this->build['delete'] = 'DELETE ';
@@ -187,7 +197,10 @@ class Query
      */
     public function update($model)
     {
-        $this->insertIntoAndUpdateOptimizer($model, self::UPDATE, 'update', 'UPDATE');
+        $this->checkQueryTypeInit('update', 'UPDATE');
+
+        $this->queryType = self::UPDATE;
+        $this->build['update'] = 'UPDATE ' . $this->getModelName($model);
 
         return $this;
     }
@@ -454,6 +467,7 @@ class Query
         if (isset($this->queryType) || isset($this->build['select'])) {
             throw new IncorrectQueryException('Cannot add a select statement');
         }
+        $this->checkQueryTypeInit('select', 'SELECT');
 
         $this->queryType = self::SELECT;
         $this->build['select'] = 'SELECT ';
