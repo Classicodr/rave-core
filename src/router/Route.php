@@ -19,6 +19,7 @@
 
 namespace rave\core\router;
 
+use rave\core\Config;
 use rave\core\Controller;
 use rave\core\Error;
 
@@ -68,7 +69,7 @@ class Route
     public function call()
     {
         if (is_array($this->callable)) {
-            $namespace = 'techweb\\app\\controller\\';
+            $namespace = Config::get('namespace') . 'controller\\';
 
             $method = reset($this->callable);
             $class = $namespace . key($this->callable);

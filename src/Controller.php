@@ -67,7 +67,7 @@ abstract class Controller
             extract(array_merge($this->data, $data));
         }
 
-        $controller = explode('\\', __CLASS__);
+        $controller = explode('\\', static::class);
 
         $file = APP . '/view/' . strtolower(end($controller)) . '/' . $view . '.php';
 
