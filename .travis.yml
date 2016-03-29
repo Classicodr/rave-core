@@ -37,7 +37,7 @@ after_script:
 notifications:
   email: false
 
-scache:
-    directories:
-      - $HOME/.composer/cache
+cache:
+  directories:
+    - $HOME/.composer/cache
 
