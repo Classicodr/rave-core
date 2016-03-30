@@ -132,7 +132,11 @@ class Query
      */
     public function insertInto($model)
     {
-        $this->assingQueryType(self::INSERT, 'insert_into', 'INSERT INTO', self::getModelName($model));
+        $this->assingQueryType(self::INSERT, 'insert_into', 'INSERT INTO',
+            self::getModelEntityName($model, Model::class, function ($model) {
+                /** @var Model $model */
+                return $model->getTable();
+            }, 'Unsupported Model'));
 
         return $this;
     }
@@ -187,18 +191,24 @@ class Query
     }
 
     /**
-     * @param Model|string $model
-     * @return string
+     * @param Model|string $object
+     * @param string $classname
+     * @param callable $callback
+     * @param string $errorMsg
+     * @return array|string
      * @throws IncorrectQueryException
+     * @internal param string $type
      */
-    private static function getModelName($model)
+    private static function getModelEntityName($object, $classname, $callback, $errorMsg)
     {
-        if (is_string($model)) {
-            return $model;
-        } elseif (is_a($model, Model::class)) {
-            return $model->getTable();
+        if ((is_string($object) && $classname === Model::class)
+            || (is_array($object) && $classname === Entity::class)
+        ) {
+            return $object;
+        } elseif (is_a($object, $classname)) {
+            return $callback($object);
         } else {
-            throw new IncorrectQueryException('Unsupported Model');
+            throw new IncorrectQueryException($errorMsg);
         }
     }
 
@@ -230,7 +240,11 @@ class Query
      */
     public function update($model)
     {
-        $this->assingQueryType(self::UPDATE, 'update', 'UPDATE', self::getModelName($model));
+        $this->assingQueryType(self::UPDATE, 'update', 'UPDATE',
+            self::getModelEntityName($model, Model::class, function ($model) {
+                /** @var Model $model */
+                return $model->getTable();
+            }, 'Unsupported Model'));
 
         return $this;
     }
@@ -269,13 +283,9 @@ class Query
     private static function dataToString($data, $statement, &$clean)
     {
 
-        if (is_array($data)) {
-            $rows = $data;
-        } elseif (is_a($data, Entity::class)) {
-            $rows = get_object_vars($data);
-        } else {
-            throw new IncorrectQueryException('Not an array nor an Entity during ' . $statement);
-        }
+        $rows = self::getModelEntityName($data, Entity::class, function ($entity) {
+            return get_object_vars($entity);
+        }, 'Not an array nor an Entity during ' . $statement);
 
         $columns = '';
         $values = '';
@@ -508,12 +518,19 @@ class Query
 
         if (is_array($model)) {
             foreach ($model as $item) {
-                $this->build['from'] .= self::getModelName($item) . ', ';
+                $this->build['from'] .= self::getModelEntityName(
+                        $item, Model::class, function ($model) {
+                        /** @var Model $model */
+                        return $model->getTable();
+                    }, 'Unsupported Model') . ', ';
             }
 
             $this->build['from'] = rtrim($this->build['from'], ', ') . ' ';
         } else {
-            $this->build['from'] .= self::getModelName($model) . ' ';
+            $this->build['from'] .= self::getModelEntityName($model, Model::class, function ($model) {
+                    /** @var Model $model */
+                    return $model->getTable();
+                }, 'Unsupported Model') . ' ';
         }
 
         return $this;
