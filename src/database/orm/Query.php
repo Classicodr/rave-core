@@ -155,8 +155,8 @@ class Query
     /**
      * Check if a statement can be used in the query
      *
-     * @param $name
-     * @param $statement
+     * @param string $name
+     * @param string $statement
      * @return bool
      * @throws IncorrectQueryException
      */
@@ -439,7 +439,7 @@ class Query
      * Recursive Generation
      *
      * @param array $conditions
-     * @param null $option AND or OR
+     * @param string $option AND or OR
      * @return string
      * @throws IncorrectQueryException
      */
