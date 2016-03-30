@@ -276,10 +276,10 @@ class Query
     /**
      * Returns a string equivalent to the statement (SET or VALUES) and populates the $clean array with values
      *
-     * @param string|Entity $data
+     * @param array|Entity $data
      * @param string $statement 'UPDATE' or 'INSERT'
      * @param array $clean the array of parameters to bind with pdo
-     * @return array
+     * @return string
      * @throws IncorrectQueryException
      */
     private static function dataToString($data, $statement, &$clean)
