@@ -39,7 +39,7 @@ class Query
     const UPDATE = 3;
     const DELETE = 4;
 
-    private $requirements = [
+    private $concatRequirements = [
         self::INSERT => [
             'name' => 'INSERT',
             'require' => ['insert_into', 'insert_into_values']
@@ -59,7 +59,7 @@ class Query
         ],
     ];
 
-    private $needs = [
+    private $dependOn = [
         'insert_into' => 'primary_type',
         'insert_into_values' => [self::INSERT => ['insert_into']],
         'update' => 'primary_type',
@@ -75,7 +75,7 @@ class Query
     ];
 
     private $statement;
-    private $values;
+    private $values = [];
 
     private $queryType;
 
@@ -122,14 +122,6 @@ class Query
     }
 
     /**
-     * @param string|Model $model
-     * @param $statementId
-     * @param $statementName
-     * @param string $statement update or insert_into
-     * @throws IncorrectQueryException
-     */
-
-    /**
      * Initialize `INSERT INTO` sql declaration,
      * requires values() to work properly
      *
@@ -140,29 +132,24 @@ class Query
      */
     public function insertInto($model)
     {
-        $this->optimiserInsertIntoAndUpdate($model, self::INSERT, 'insert_into', 'INSERT INTO');
+        $this->assingQueryType(self::INSERT, 'insert_into', 'INSERT INTO', self::getModelName($model));
 
         return $this;
     }
 
     /**
-     * Used by Insert Into and Update to complete the statement
-     *
-     * @param Model|string $model
-     * @param int $type self::INSERT or self::UPDATE
-     * @param string $build 'insert_into' or 'update'
-     * @param string $statement 'INSERT INTO' or 'UPDATE'
-     * @return bool
+     * @param string $type
+     * @param string $build
+     * @param string $statement
+     * @param string|null $concat
      * @throws IncorrectQueryException
      */
-    private function optimiserInsertIntoAndUpdate($model, $type, $build, $statement)
+    private function assingQueryType($type, $build, $statement, $concat = null)
     {
         $this->checkIfCanBeAdded($build, $statement);
 
         $this->queryType = $type;
-        $this->build[$build] = $statement . ' ' . self::getModelName($model);
-
-        return true;
+        $this->build[$build] = $statement . ' ' . $concat;
     }
 
     /**
@@ -182,12 +169,12 @@ class Query
             throw new IncorrectQueryException($errorMsg);
         }
 
-        if ($this->needs[$name] === 'primary_type') {
+        if ($this->dependOn[$name] === 'primary_type') {
             if (isset($this->queryType)) {
                 throw new IncorrectQueryException($errorMsg);
             }
-        } elseif (isset($this->needs[$name][$this->queryType])) {
-            foreach ($this->needs[$name][$this->queryType] as $need) {
+        } elseif (isset($this->dependOn[$name][$this->queryType])) {
+            foreach ($this->dependOn[$name][$this->queryType] as $need) {
                 if (!isset($this->build[$need])) {
                     throw new IncorrectQueryException($errorMsg);
                 }
@@ -226,10 +213,7 @@ class Query
      */
     public function delete()
     {
-        $this->checkIfCanBeAdded('delete', 'DELETE');
-
-        $this->queryType = self::DELETE;
-        $this->build['delete'] = 'DELETE ';
+        $this->assingQueryType(self::DELETE, 'delete', 'DELETE');
 
         return $this;
     }
@@ -246,7 +230,7 @@ class Query
      */
     public function update($model)
     {
-        $this->optimiserInsertIntoAndUpdate($model, self::UPDATE, 'update', 'UPDATE');
+        $this->assingQueryType(self::UPDATE, 'update', 'UPDATE', self::getModelName($model));
 
         return $this;
     }
@@ -320,7 +304,6 @@ class Query
         } else {
             return ' (' . $columns . ') VALUES (' . $values . ')';
         }
-
     }
 
     /**
@@ -424,60 +407,83 @@ class Query
             $this->build['where'] = 'WHERE ' . $params[self::CONDITIONS] . ' ';
 
             if (isset($params[self::VALUES])) {
-                if (self::UPDATE === $this->queryType) {
-                    $this->values = array_merge($this->values, $params[self::VALUES]);
-                } else {
-                    $this->values = $params[self::VALUES];
-                }
+                $this->values += $params[self::VALUES];
             }
 
         } elseif (is_array($params)) {
-            $this->build['where'] = 'WHERE ' . $this->createWhere($params) . ' ';
+            $this->build['where'] = 'WHERE ' . $this->initWhereCreator($params) . ' ';
         }
 
         return $this;
     }
 
     /**
-     * @param array $conditions
-     * @param int $count
+     * Initialises the WhereCreator
+     *
+     * @param array $params
      * @return string
      * @throws IncorrectQueryException
      */
-    private function createWhere(array $conditions, &$count = 0)
+    private function initWhereCreator($params)
     {
-        if (isset($conditions['AND'])) {
-            $option = 'AND';
-        } elseif (isset($conditions['OR'])) {
-            $option = 'OR';
+        if (isset($params['AND'])) {
+            return $this->createWhere($params['AND'], 'AND');
+        } elseif (isset($params['OR'])) {
+            return $this->createWhere($params['OR'], 'OR');
         }
+
+        return $this->createWhere($params);
+    }
+
+    /**
+     * Recursive Generation
+     *
+     * @param array $conditions
+     * @param null $option AND or OR
+     * @return string
+     * @throws IncorrectQueryException
+     */
+    private function createWhere($conditions, $option = null)
+    {
 
         if (isset($option)) {
 
-            foreach ($conditions[$option] as $key => $condition) {
-                if (!is_int($key)) {
-                    $conditions[$option][$key] = $this->createWhere([$key => $condition], $count);
+            foreach ($conditions as $key => $condition) {
+                if ($key === 'AND' || $key === 'OR') {
+                    $conditions[$key] = $this->createWhere($condition, $key);
                 } else {
-                    $conditions[$option][$key] = $this->createWhere($condition, $count);
+                    $conditions[$key] = $this->createWhere($condition);
                 }
             }
-            $where = '(' . implode(' ' . $option . ' ', $conditions[$option]) . ')';
+
+            return '(' . implode(' ' . $option . ' ', $conditions) . ')';
 
         } elseif (count($conditions) === 3) {
-            $where = $conditions[0] . ' ' . $conditions[1] . ' :';
-
-            if (isset($this->values[':' . $conditions[0]])) {
-                $conditions[0] .= $count;
-                ++$count;
-            }
-
-            $where .= $conditions[0];
-            $this->values[':' . $conditions[0]] = $conditions[2];
+            return $this->whereAddValues($conditions);
         } else {
             throw new IncorrectQueryException('Bad where construction');
         }
 
-        return $where;
+    }
+
+    /**
+     * @param array $conditions
+     * @return string
+     * @internal param $count
+     */
+    private function whereAddValues(array $conditions)
+    {
+        $count = 0;
+        $append = null;
+
+        while (isset($this->values[':' . $conditions[0] . $append])) {
+            $append = $count;
+            ++$count;
+        }
+
+        $this->values[':' . $conditions[0] . $append] = $conditions[2];
+
+        return $conditions[0] . ' ' . $conditions[1] . ' :' . $conditions[0] . $append;
     }
 
     /**
@@ -529,10 +535,7 @@ class Query
      */
     public function select($params = '*')
     {
-        $this->checkIfCanBeAdded('select', 'SELECT');
-
-        $this->queryType = self::SELECT;
-        $this->build['select'] = 'SELECT ';
+        $this->assingQueryType(self::SELECT, 'select', 'SELECT');
 
         if (is_string($params)) {
             $this->build['select'] .= $params . ' ';
@@ -577,7 +580,7 @@ class Query
     {
         $this->concat();
 
-        return isset($this->values) ? [self::STATEMENT => $this->statement, self::VALUES => $this->values]
+        return !empty($this->values) ? [self::STATEMENT => $this->statement, self::VALUES => $this->values]
             : [self::STATEMENT => $this->statement];
     }
 
@@ -596,16 +599,16 @@ class Query
             return true;
         }
 
-        if (array_diff($this->requirements[$this->queryType]['require'], array_keys($this->build))) {
-            throw new IncorrectQueryException('Incomplete ' . $this->requirements[$this->queryType]['name']
+        if (array_diff($this->concatRequirements[$this->queryType]['require'], array_keys($this->build))) {
+            throw new IncorrectQueryException('Incomplete ' . $this->concatRequirements[$this->queryType]['name']
                 . ' statement');
         }
 
         $statement = '';
 
-        $concat = isset($this->requirements[$this->queryType]['uses']) ? 'uses' : 'require';
+        $concat = isset($this->concatRequirements[$this->queryType]['uses']) ? 'uses' : 'require';
 
-        foreach ($this->requirements[$this->queryType][$concat] as $use) {
+        foreach ($this->concatRequirements[$this->queryType][$concat] as $use) {
             $statement .= isset($this->build[$use]) ? $this->build[$use] : null;
         }
 
@@ -635,7 +638,7 @@ class Query
      */
     public function getValues()
     {
-        return isset($this->values) ? $this->values : null;
+        return !empty($this->values) ? $this->values : null;
     }
 
 }

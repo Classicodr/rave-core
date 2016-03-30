@@ -365,6 +365,18 @@ class QueryTest extends PHPUnit_Framework_TestCase
             $query_string_string->getParams()
         );
 
+        $query_string_string = Query::create()
+            ->select('id, title')
+            ->from('articles')
+            ->where(['OR' => [['id', '=', 2], 'AND' => [['title', '=', 'helloworld'], ['title', '=', 'hello world']]]]);
+        $this->assertEquals(
+            [
+                'statement' => 'SELECT id, title FROM articles WHERE (id = :id OR (title = :title AND title = :title0)) ',
+                'values' => [':id' => 2, ':title' => 'helloworld', ':title0' => 'hello world']
+            ],
+            $query_string_string->getParams()
+        );
+
     }
 
     /**
@@ -783,7 +795,7 @@ class QueryTest extends PHPUnit_Framework_TestCase
             ->select()
             ->from($model);
 
-        $entity_after_update = $query->first( $model->getEntityName());
+        $entity_after_update = $query->first($model->getEntityName());
 
         $this->assertEquals($entity, $entity_after_update);
     }
@@ -803,6 +815,8 @@ class QueryTest extends PHPUnit_Framework_TestCase
             ->execute();
 
         $this->assertEquals([], Query::create()->select()->from($model)->find());
+
+        Query::create('DELETE FROM articles')->execute();
     }
 
 }
