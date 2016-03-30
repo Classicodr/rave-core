@@ -122,6 +122,14 @@ class Query
     }
 
     /**
+     * @param string|Model $model
+     * @param $statementId
+     * @param $statementName
+     * @param string $statement update or insert_into
+     * @throws IncorrectQueryException
+     */
+
+    /**
      * Initialize `INSERT INTO` sql declaration,
      * requires values() to work properly
      *
@@ -136,14 +144,6 @@ class Query
 
         return $this;
     }
-
-    /**
-     * @param string|Model $model
-     * @param $statementId
-     * @param $statementName
-     * @param string $statement update or insert_into
-     * @throws IncorrectQueryException
-     */
 
     /**
      * Used by Insert Into and Update to complete the statement
@@ -166,7 +166,7 @@ class Query
     }
 
     /**
-     * Check if a statement is initialized
+     * Check if a statement can be used in the query
      *
      * @param $name
      * @param $statement
@@ -268,44 +268,59 @@ class Query
     {
         $this->checkIfCanBeAdded('update_set', 'SET');
 
-        $rows = $this->getFromArrayOrEntity($data, 'UPDATE');
-
-        $columns = '';
-        $clean = [];
-
-        foreach ($rows as $key => $value) {
-            if (isset($value)) {
-                $columns .= $key . ' = :' . $key . ', ';
-                $clean[':' . $key] = $value;
-            }
-        }
-
-        $columns = rtrim($columns, ', ');
-
-        $this->build['update_set'] = ' SET ' . $columns . ' ';
-
-        if (isset($clean)) {
-            $this->values = $clean;
-        }
+        $this->build['update_set'] = self::dataToString($data, 'UPDATE', $this->values);
 
         return $this;
     }
 
     /**
-     * @param array|Entity $data
-     * @param string $statement used when throws an exception
+     * Returns a string equivalent to the statement (SET or VALUES) and populates the $clean array with values
+     *
+     * @param string|Entity $data
+     * @param string $statement 'UPDATE' or 'INSERT'
+     * @param array $clean the array of parameters to bind with pdo
      * @return array
      * @throws IncorrectQueryException
      */
-    private static function getFromArrayOrEntity($data, $statement)
+    private static function dataToString($data, $statement, &$clean)
     {
+
         if (is_array($data)) {
-            return $data;
+            $rows = $data;
         } elseif (is_a($data, Entity::class)) {
-            return get_object_vars($data);
+            $rows = get_object_vars($data);
         } else {
             throw new IncorrectQueryException('Not an array nor an Entity during ' . $statement);
         }
+
+        $columns = '';
+        $values = '';
+
+        foreach ($rows as $key => $value) {
+            if (isset($value)) {
+                $columns .= $key;
+                $var = ':' . $key;
+                $clean[$var] = $value;
+
+                if ($statement === 'UPDATE') {
+                    $columns .= ' = ' . $var;
+                } else {
+                    $values .= $var . ', ';
+                }
+
+                $columns .= ', ';
+            }
+        }
+
+        $columns = rtrim($columns, ', ');
+        $values = rtrim($values, ', ');
+
+        if ($statement === 'UPDATE') {
+            return ' SET ' . $columns . ' ';
+        } else {
+            return ' (' . $columns . ') VALUES (' . $values . ')';
+        }
+
     }
 
     /**
@@ -546,27 +561,7 @@ class Query
     {
         $this->checkIfCanBeAdded('insert_into_values', '(...)VALUES(...)');
 
-        $rows = $this->getFromArrayOrEntity($data, 'INSERT');
-
-        $columns = '';
-        $values = '';
-        $clean = [];
-
-        foreach ($rows as $key => $value) {
-            if (isset($value)) {
-                $columns .= $key . ', ';
-                $values .= ':' . $key . ', ';
-                $clean[':' . $key] = $value;
-            }
-        }
-
-        $columns = rtrim($columns, ', ');
-        $values = rtrim($values, ', ');
-        $this->build['insert_into_values'] = ' (' . $columns . ') VALUES (' . $values . ')';
-
-        if (isset($clean)) {
-            $this->values = $clean;
-        }
+        $this->build['insert_into_values'] = self::dataToString($data, 'INSERT', $this->values);
 
         return $this;
     }
