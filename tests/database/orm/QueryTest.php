@@ -161,7 +161,7 @@ class QueryTest extends PHPUnit_Framework_TestCase
     /**
      * @throws \rave\core\exception\IncorrectQueryException
      * @expectedException \rave\core\exception\IncorrectQueryException
-     * @expectedExceptionMessage Cannot add INSERT INTO statement
+     * @expectedExceptionMessage Cannot add INSERT INTO
      */
     public function testInsertDuplicate()
     {
@@ -199,7 +199,7 @@ class QueryTest extends PHPUnit_Framework_TestCase
     /**
      * @throws \rave\core\exception\IncorrectQueryException
      * @expectedException \rave\core\exception\IncorrectQueryException
-     * @expectedExceptionMessage Cannot add (...)VALUES(...) statement
+     * @expectedExceptionMessage Cannot add (...)VALUES(...)
      */
     public function testValuesDuplicate()
     {
@@ -212,7 +212,7 @@ class QueryTest extends PHPUnit_Framework_TestCase
     /**
      * @throws \rave\core\exception\IncorrectQueryException
      * @expectedException \rave\core\exception\IncorrectQueryException
-     * @expectedExceptionMessage Cannot add (...)VALUES(...) statement
+     * @expectedExceptionMessage Cannot add (...)VALUES(...)
      */
     public function testValuesIncompleteMissingInsertInto()
     {
@@ -223,7 +223,7 @@ class QueryTest extends PHPUnit_Framework_TestCase
     /**
      * @throws \rave\core\exception\IncorrectQueryException
      * @expectedException \rave\core\exception\IncorrectQueryException
-     * @expectedExceptionMessage Not an array, nor an Entity in INSERT declaration
+     * @expectedExceptionMessage Not an array nor an Entity during INSERT
      */
     public function testValuesIncorrect()
     {
@@ -262,7 +262,7 @@ class QueryTest extends PHPUnit_Framework_TestCase
     /**
      * @throws \rave\core\exception\IncorrectQueryException
      * @expectedException \rave\core\exception\IncorrectQueryException
-     * @expectedExceptionMessage Cannot add DELETE statement
+     * @expectedExceptionMessage Cannot add DELETE
      */
     public function testDeleteDuplicate()
     {
@@ -285,7 +285,7 @@ class QueryTest extends PHPUnit_Framework_TestCase
     /**
      * @throws \rave\core\exception\IncorrectQueryException
      * @expectedException \rave\core\exception\IncorrectQueryException
-     * @expectedExceptionMessage Incomplete DELETE statement
+     * @expectedExceptionMessage Cannot add WHERE
      */
     public function testDeleteMissingFrom()
     {
@@ -370,7 +370,7 @@ class QueryTest extends PHPUnit_Framework_TestCase
     /**
      * @throws \rave\core\exception\IncorrectQueryException
      * @expectedException \rave\core\exception\IncorrectQueryException
-     * @expectedExceptionMessage Cannot add a select statement
+     * @expectedExceptionMessage Cannot add SELECT
      */
     public function testSelectDuplicate()
     {
@@ -410,7 +410,7 @@ class QueryTest extends PHPUnit_Framework_TestCase
     /**
      * @throws \rave\core\exception\IncorrectQueryException
      * @expectedException \rave\core\exception\IncorrectQueryException
-     * @expectedExceptionMessage Cannot add FROM statement
+     * @expectedExceptionMessage Cannot add FROM
      */
     public function testFromDuplicate()
     {
@@ -424,7 +424,7 @@ class QueryTest extends PHPUnit_Framework_TestCase
     /**
      * @throws \rave\core\exception\IncorrectQueryException
      * @expectedException \rave\core\exception\IncorrectQueryException
-     * @expectedExceptionMessage Cannot add FROM statement
+     * @expectedExceptionMessage Cannot add FROM
      */
     public function testFromIncomplete()
     {
@@ -500,7 +500,7 @@ class QueryTest extends PHPUnit_Framework_TestCase
     /**
      * @throws \rave\core\exception\IncorrectQueryException
      * @expectedException \rave\core\exception\IncorrectQueryException
-     * @expectedExceptionMessage Cannot add UPDATE statement
+     * @expectedExceptionMessage Cannot add UPDATE
      */
 
     public function testUpdateDuplicate()
@@ -537,7 +537,7 @@ class QueryTest extends PHPUnit_Framework_TestCase
     /**
      * @throws \rave\core\exception\IncorrectQueryException
      * @expectedException \rave\core\exception\IncorrectQueryException
-     * @expectedExceptionMessage Incomplete UPDATE statement
+     * @expectedExceptionMessage Cannot add WHERE
      */
 
     public function testUpdateMissingSet()
@@ -569,7 +569,7 @@ class QueryTest extends PHPUnit_Framework_TestCase
     /**
      * @throws \rave\core\exception\IncorrectQueryException
      * @expectedException \rave\core\exception\IncorrectQueryException
-     * @expectedExceptionMessage Cannot add SET statement
+     * @expectedExceptionMessage Cannot add SET
      */
 
     public function testSetDuplicate()
@@ -582,7 +582,7 @@ class QueryTest extends PHPUnit_Framework_TestCase
     /**
      * @throws \rave\core\exception\IncorrectQueryException
      * @expectedException \rave\core\exception\IncorrectQueryException
-     * @expectedExceptionMessage Cannot add SET statement
+     * @expectedExceptionMessage Cannot add SET
      */
     public function testSetIncompleteMissingUpdate()
     {
@@ -594,7 +594,7 @@ class QueryTest extends PHPUnit_Framework_TestCase
     /**
      * @throws \rave\core\exception\IncorrectQueryException
      * @expectedException \rave\core\exception\IncorrectQueryException
-     * @expectedExceptionMessage Not an array nor an Entity during statement SET
+     * @expectedExceptionMessage Not an array nor an Entity during UPDATE
      */
     public function testSetIncorrect()
     {
@@ -606,7 +606,7 @@ class QueryTest extends PHPUnit_Framework_TestCase
     /**
      * @throws \rave\core\exception\IncorrectQueryException
      * @expectedException \rave\core\exception\IncorrectQueryException
-     * @expectedExceptionMessage Cannot add SET statement
+     * @expectedExceptionMessage Cannot add SET
      */
     public function testSetMissingUpdate()
     {
@@ -636,7 +636,7 @@ class QueryTest extends PHPUnit_Framework_TestCase
     /**
      * @throws \rave\core\exception\IncorrectQueryException
      * @expectedException \rave\core\exception\IncorrectQueryException
-     * @expectedExceptionMessage Cannot add a WHERE statement
+     * @expectedExceptionMessage Cannot add WHERE
      */
     public function testWhereDuplicate()
     {
@@ -650,7 +650,7 @@ class QueryTest extends PHPUnit_Framework_TestCase
     /**
      * @throws \rave\core\exception\IncorrectQueryException
      * @expectedException \rave\core\exception\IncorrectQueryException
-     * @expectedExceptionMessage Cannot add a WHERE statement
+     * @expectedExceptionMessage Cannot add WHERE
      */
     public function testWhereIncomplete()
     {

@@ -59,6 +59,21 @@ class Query
         ],
     ];
 
+    private $needs = [
+        'insert_into' => 'primary_type',
+        'insert_into_values' => [self::INSERT => ['insert_into']],
+        'update' => 'primary_type',
+        'update_set' => [self::UPDATE => ['update']],
+        'select' => 'primary_type',
+        'delete' => 'primary_type',
+        'from' => [self::SELECT => ['select'], self::DELETE => ['delete']],
+        'where' => [
+            self::SELECT => ['select', 'from'],
+            self::UPDATE => ['update', 'update_set'],
+            self::DELETE => ['delete', 'from']
+        ]
+    ];
+
     private $statement;
     private $values;
 
@@ -123,6 +138,14 @@ class Query
     }
 
     /**
+     * @param string|Model $model
+     * @param $statementId
+     * @param $statementName
+     * @param string $statement update or insert_into
+     * @throws IncorrectQueryException
+     */
+
+    /**
      * Used by Insert Into and Update to complete the statement
      *
      * @param Model|string $model
@@ -134,7 +157,7 @@ class Query
      */
     private function optimiserInsertIntoAndUpdate($model, $type, $build, $statement)
     {
-        $this->checkQueryTypeInit($build, $statement);
+        $this->checkIfCanBeAdded($build, $statement);
 
         $this->queryType = $type;
         $this->build[$build] = $statement . ' ' . self::getModelName($model);
@@ -143,25 +166,34 @@ class Query
     }
 
     /**
-     * @param string|Model $model
-     * @param $statementId
-     * @param $statementName
-     * @param string $statement update or insert_into
-     * @throws IncorrectQueryException
-     */
-
-    /**
      * Check if a statement is initialized
      *
-     * @param $statementName
+     * @param $name
      * @param $statement
      * @return bool
      * @throws IncorrectQueryException
      */
-    private function checkQueryTypeInit($statementName, $statement)
+    private function checkIfCanBeAdded($name, $statement)
     {
-        if (isset($this->build[$statementName], $this->queryType)) {
-            throw new IncorrectQueryException('Cannot add ' . $statement . ' statement');
+        $errorMsg = 'Cannot add ' . $statement;
+
+        // If already initialized
+        if (isset($this->build[$name])) {
+            throw new IncorrectQueryException($errorMsg);
+        }
+
+        if ($this->needs[$name] === 'primary_type') {
+            if (isset($this->queryType)) {
+                throw new IncorrectQueryException($errorMsg);
+            }
+        } elseif (isset($this->needs[$name][$this->queryType])) {
+            foreach ($this->needs[$name][$this->queryType] as $need) {
+                if (!isset($this->build[$need])) {
+                    throw new IncorrectQueryException($errorMsg);
+                }
+            }
+        } else {
+            throw new IncorrectQueryException($errorMsg);
         }
 
         return true;
@@ -194,7 +226,7 @@ class Query
      */
     public function delete()
     {
-        $this->checkQueryTypeInit('delete', 'DELETE');
+        $this->checkIfCanBeAdded('delete', 'DELETE');
 
         $this->queryType = self::DELETE;
         $this->build['delete'] = 'DELETE ';
@@ -234,19 +266,12 @@ class Query
      */
     public function set($data)
     {
-        if (isset($this->build['update_set']) || !isset($this->queryType) || $this->queryType !== self::UPDATE) {
-            throw new IncorrectQueryException('Cannot add SET statement');
-        }
+        $this->checkIfCanBeAdded('update_set', 'SET');
 
-        if (is_array($data)) {
-            $rows = $data;
-        } elseif (is_subclass_of($data, Entity::class, false)) {
-            $rows = get_object_vars($data);
-        } else {
-            throw new IncorrectQueryException('Not an array nor an Entity during statement SET');
-        }
+        $rows = $this->getFromArrayOrEntity($data, 'UPDATE');
 
         $columns = '';
+        $clean = [];
 
         foreach ($rows as $key => $value) {
             if (isset($value)) {
@@ -264,6 +289,28 @@ class Query
         }
 
         return $this;
+    }
+
+    /**
+     * @param array|Entity $data
+     * @param string $statement used when throws an exception
+     * @return array
+     * @throws IncorrectQueryException
+     */
+    private static function getFromArrayOrEntity($data, $statement)
+    {
+
+        if (is_array($data)) {
+            $rows = $data;
+
+            return $rows;
+        } elseif (is_subclass_of($data, Entity::class, false)) {
+            $rows = get_object_vars($data);
+
+            return $rows;
+        } else {
+            throw new IncorrectQueryException('Not an array nor an Entity during ' . $statement);
+        }
     }
 
     /**
@@ -361,9 +408,7 @@ class Query
      */
     public function where(array $params)
     {
-        if (isset($this->build['where']) || !isset($this->queryType) || $this->queryType === self::INSERT) {
-            throw new IncorrectQueryException('Cannot add a WHERE statement');
-        }
+        $this->checkIfCanBeAdded('where', 'WHERE');
 
         if (isset($params[self::CONDITIONS]) && is_string($params[self::CONDITIONS])) {
             $this->build['where'] = 'WHERE ' . $params[self::CONDITIONS] . ' ';
@@ -441,11 +486,7 @@ class Query
      */
     public function from($model)
     {
-        if (isset($this->build['from']) || !isset($this->queryType)
-            || ($this->queryType !== self::SELECT && $this->queryType !== self::DELETE)
-        ) {
-            throw new IncorrectQueryException('Cannot add FROM statement');
-        }
+        $this->checkIfCanBeAdded('from', 'FROM');
 
         $this->build['from'] = 'FROM ';
 
@@ -478,10 +519,7 @@ class Query
      */
     public function select($params = '*')
     {
-        if (isset($this->queryType) || isset($this->build['select'])) {
-            throw new IncorrectQueryException('Cannot add a select statement');
-        }
-        $this->checkQueryTypeInit('select', 'SELECT');
+        $this->checkIfCanBeAdded('select', 'SELECT');
 
         $this->queryType = self::SELECT;
         $this->build['select'] = 'SELECT ';
@@ -511,22 +549,13 @@ class Query
      */
     public function values($data)
     {
-        if (isset($this->build['insert_into_values']) || !isset($this->queryType)
-            || $this->queryType !== self::INSERT
-        ) {
-            throw new IncorrectQueryException('Cannot add (...)VALUES(...) statement');
-        }
+        $this->checkIfCanBeAdded('insert_into_values', '(...)VALUES(...)');
 
-        if (is_array($data)) {
-            $rows = $data;
-        } elseif (is_subclass_of($data, Entity::class, false)) {
-            $rows = get_object_vars($data);
-        } else {
-            throw new IncorrectQueryException('Not an array, nor an Entity in INSERT declaration');
-        }
+        $rows = $this->getFromArrayOrEntity($data, 'INSERT');
 
         $columns = '';
         $values = '';
+        $clean = [];
 
         foreach ($rows as $key => $value) {
             if (isset($value)) {
