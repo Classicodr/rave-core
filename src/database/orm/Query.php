@@ -208,7 +208,7 @@ class Query
     {
         if (is_string($model)) {
             return $model;
-        } elseif (is_subclass_of($model, Model::class, false)) {
+        } elseif (is_a($model, Model::class)) {
             return $model->getTable();
         } else {
             throw new IncorrectQueryException('Unsupported Model');
@@ -299,15 +299,10 @@ class Query
      */
     private static function getFromArrayOrEntity($data, $statement)
     {
-
         if (is_array($data)) {
-            $rows = $data;
-
-            return $rows;
-        } elseif (is_subclass_of($data, Entity::class, false)) {
-            $rows = get_object_vars($data);
-
-            return $rows;
+            return $data;
+        } elseif (is_a($data, Entity::class)) {
+            return get_object_vars($data);
         } else {
             throw new IncorrectQueryException('Not an array nor an Entity during ' . $statement);
         }

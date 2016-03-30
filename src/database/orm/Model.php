@@ -24,6 +24,11 @@ use rave\core\exception\EntityException;
 use rave\core\exception\IncorrectQueryException;
 use rave\core\exception\UnknownPropertyException;
 
+/**
+ * Class Model
+ *
+ * @package rave\core\database\orm
+ */
 abstract class Model
 {
     protected static $table;
