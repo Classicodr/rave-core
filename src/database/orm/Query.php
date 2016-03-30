@@ -123,18 +123,23 @@ class Query
     }
 
     /**
-     * @param $model
-     * @param $type
-     * @param $build
-     * @param $string
+     * Used by Insert Into and Update to complete the statement
+     *
+     * @param Model|string $model
+     * @param int $type self::INSERT or self::UPDATE
+     * @param string $build 'insert_into' or 'update'
+     * @param string $statement 'INSERT INTO' or 'UPDATE'
+     * @return bool
      * @throws IncorrectQueryException
      */
-    private function optimiserInsertIntoAndUpdate($model, $type, $build, $string)
+    private function optimiserInsertIntoAndUpdate($model, $type, $build, $statement)
     {
-        $this->checkQueryTypeInit($build, $string);
+        $this->checkQueryTypeInit($build, $statement);
 
         $this->queryType = $type;
-        $this->build[$build] = $string . ' ' . self::getModelName($model);
+        $this->build[$build] = $statement . ' ' . self::getModelName($model);
+
+        return true;
     }
 
     /**

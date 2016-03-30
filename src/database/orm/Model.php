@@ -39,33 +39,13 @@ abstract class Model
     }
 
     /**
-     * Prepare the given query, to execute it, use either find() or first()
-     * usage:
-     * ```
-     * $model->query("SELECT * FROM example",[':id' => 2])
-     *      ->first();
-     * ```
-     *
-     * @param string $statement SQL statement
-     * @param array $values [optional]
-     * PDO SQL injection security
-     * @return Query
-     * @deprecated use newQuery() instead
-     * @see newQuery()
-     */
-    public function setQuery($statement, array $values = [])
-    {
-        return $this->newQuery($statement, $values);
-    }
-
-    /**
      * Returns a new Query Object
      * Can be used for directly define the query :
      * ```
      * newQuery("SELECT * FROM example WHERE id = :id",[':id' => 2 ])
      * ```
      *
-     * @param null $statement
+     * @param null|string $statement
      * @param array $values
      * @return Query
      */
