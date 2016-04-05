@@ -52,7 +52,6 @@ abstract class Controller
      */
     public function afterCall($method)
     {
-        $method();
     }
 
     /**
