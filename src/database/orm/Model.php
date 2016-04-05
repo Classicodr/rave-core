@@ -24,6 +24,11 @@ use rave\core\exception\EntityException;
 use rave\core\exception\IncorrectQueryException;
 use rave\core\exception\UnknownPropertyException;
 
+/**
+ * Class Model
+ *
+ * @package rave\core\database\orm
+ */
 abstract class Model
 {
     protected static $table;
@@ -36,42 +41,6 @@ abstract class Model
     public static function getTable()
     {
         return static::$table;
-    }
-
-    /**
-     * Prepare the given query, to execute it, use either find() or first()
-     * usage:
-     * ```
-     * $model->query("SELECT * FROM example",[':id' => 2])
-     *      ->first();
-     * ```
-     *
-     * @param string $statement SQL statement
-     * @param array $values [optional]
-     * PDO SQL injection security
-     * @return Model
-     * @deprecated use newQuery() instead
-     * @see newQuery()
-     */
-    public function setQuery($statement, array $values = [])
-    {
-        return $this->newQuery($statement, $values);
-    }
-
-    /**
-     * Returns a new Query Object
-     * Can be used for directly define the query :
-     * ```
-     * newQuery("SELECT * FROM example WHERE id = :id",[':id' => 2 ])
-     * ```
-     *
-     * @param null $statement
-     * @param array $values
-     * @return Query
-     */
-    public function newQuery($statement = null, array $values = null)
-    {
-        return Query::create($statement, $values);
     }
 
     /**
@@ -93,10 +62,11 @@ abstract class Model
      */
     public function save(Entity $entity)
     {
-        if (is_string($entity->getPrimaryKeys())) { //si l'entité existe
+        $primary = $entity->getPrimaryKeys();
+        if (is_string($primary) && isset($entity->$primary)) { //si l'entité existe
             $this->update($entity);
-        } elseif (is_array($entity->getPrimaryKeys())) {
-            foreach ($entity->getPrimaryKeys() as $primary_key) {
+        } elseif (is_array($primary)) {
+            foreach ($primary as $primary_key) {
                 if (!isset($entity->$primary_key)) {
                     throw new EntityException('Cannot add an multiple primary key entity');
                 }
@@ -139,6 +109,22 @@ abstract class Model
                 'conditions' => $conditions,
             ])
             ->execute();
+    }
+
+    /**
+     * Returns a new Query Object
+     * Can be used for directly define the query :
+     * ```
+     * newQuery("SELECT * FROM example WHERE id = :id",[':id' => 2 ])
+     * ```
+     *
+     * @param null|string $statement
+     * @param array $values
+     * @return Query
+     */
+    public function newQuery($statement = null, array $values = [])
+    {
+        return Query::create($statement, $values);
     }
 
     /**

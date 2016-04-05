@@ -52,7 +52,6 @@ abstract class Controller
      */
     public function afterCall($method)
     {
-        $method();
     }
 
     /**
@@ -69,7 +68,7 @@ abstract class Controller
 
         $controller = explode('\\', static::class);
 
-        $file = APP . '/view/' . strtolower(end($controller)) . '/' . $view . '.php';
+        $file = APP . 'view/' . strtolower(end($controller)) . '/' . $view . '.php';
 
         ob_start();
 

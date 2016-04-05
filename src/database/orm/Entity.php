@@ -29,6 +29,7 @@ use rave\core\exception\UnknownPropertyException;
 abstract class Entity
 {
     protected $options = [];
+    protected $properties = [];
 
     /**
      * Entity constructor.
@@ -51,6 +52,24 @@ abstract class Entity
         }
 
         $this->options = $options;
+    }
+
+    /**
+     * @param $key
+     * @return mixed
+     */
+    public function __get($key)
+    {
+        return $this->properties[$key];
+    }
+
+    /**
+     * @param $key
+     * @param $value
+     */
+    public function __set($key, $value)
+    {
+        $this->properties[$key] = $value;
     }
 
     /**
