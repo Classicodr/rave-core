@@ -44,22 +44,6 @@ abstract class Model
     }
 
     /**
-     * Returns a new Query Object
-     * Can be used for directly define the query :
-     * ```
-     * newQuery("SELECT * FROM example WHERE id = :id",[':id' => 2 ])
-     * ```
-     *
-     * @param null|string $statement
-     * @param array $values
-     * @return Query
-     */
-    public function newQuery($statement = null, array $values = [])
-    {
-        return Query::create($statement, $values);
-    }
-
-    /**
      * Get the last inserted ID
      *
      * @return string
@@ -78,10 +62,11 @@ abstract class Model
      */
     public function save(Entity $entity)
     {
-        if (is_string($entity->getPrimaryKeys())) { //si l'entité existe
+        $primary = $entity->getPrimaryKeys();
+        if (is_string($primary) && isset($entity->$primary)) { //si l'entité existe
             $this->update($entity);
-        } elseif (is_array($entity->getPrimaryKeys())) {
-            foreach ($entity->getPrimaryKeys() as $primary_key) {
+        } elseif (is_array($primary)) {
+            foreach ($primary as $primary_key) {
                 if (!isset($entity->$primary_key)) {
                     throw new EntityException('Cannot add an multiple primary key entity');
                 }
@@ -124,6 +109,22 @@ abstract class Model
                 'conditions' => $conditions,
             ])
             ->execute();
+    }
+
+    /**
+     * Returns a new Query Object
+     * Can be used for directly define the query :
+     * ```
+     * newQuery("SELECT * FROM example WHERE id = :id",[':id' => 2 ])
+     * ```
+     *
+     * @param null|string $statement
+     * @param array $values
+     * @return Query
+     */
+    public function newQuery($statement = null, array $values = [])
+    {
+        return Query::create($statement, $values);
     }
 
     /**
