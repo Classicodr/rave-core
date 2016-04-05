@@ -54,7 +54,7 @@ abstract class Model
      * @param array $values
      * @return Query
      */
-    public function newQuery($statement = null, array $values = null)
+    public function newQuery($statement = null, array $values = [])
     {
         return Query::create($statement, $values);
     }
