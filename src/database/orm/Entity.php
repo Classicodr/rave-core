@@ -68,7 +68,6 @@ abstract class Entity
                 throw new UnknownPropertyException('No attribute ' . $key . ' in this Entity');
             }
         }
-        var_dump($this);
     }
 
     /**
