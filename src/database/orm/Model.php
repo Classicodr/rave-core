@@ -44,27 +44,17 @@ abstract class Model
     }
 
     /**
-     * Get the last inserted ID
-     *
-     * @return string
-     */
-    public function lastInsertId()
-    {
-        return DB::get()->lastInsertId();
-    }
-
-    /**
      * Saves the entity (add if not exists or updates it)
      * If the Entity has multiple primary keys, only update will work
      *
      * @param Entity $entity
      * @throws EntityException if there is a undefined multiple primary key
      */
-    public function save(Entity $entity)
+    public static function save(Entity $entity)
     {
         $primary = $entity->getPrimaryKeys();
         if (is_string($primary) && isset($entity->$primary)) { //si l'entité existe
-            $this->update($entity);
+            self::update($entity);
         } elseif (is_array($primary)) {
             foreach ($primary as $primary_key) {
                 if (!isset($entity->$primary_key)) {
@@ -72,9 +62,9 @@ abstract class Model
                 }
             }
 
-            $this->update($entity);
+            self::update($entity);
         } else {
-            $this->add($entity);
+            self::add($entity);
         }
 
     }
@@ -86,7 +76,7 @@ abstract class Model
      * @throws IncorrectQueryException
      * @throws UnknownPropertyException
      */
-    public function update(Entity $entity)
+    public static function update(Entity $entity)
     {
         $primaries = $entity->getPrimaryKeys();
         $conditions = '';
@@ -102,12 +92,26 @@ abstract class Model
             }
         }
 
-        $this->newQuery()
+        Query::create()
             ->update(static::$table)
             ->set($entity)
             ->where([
                 'conditions' => $conditions,
             ])
+            ->execute();
+    }
+
+    /**
+     * Adds the entity
+     *
+     * @param Entity $entity
+     * @throws IncorrectQueryException
+     */
+    public static function add(Entity $entity)
+    {
+        self::newQuery()
+            ->insertInto(static::$table)
+            ->values($entity)
             ->execute();
     }
 
@@ -122,23 +126,19 @@ abstract class Model
      * @param array $values
      * @return Query
      */
-    public function newQuery($statement = null, array $values = [])
+    public static function newQuery($statement = null, array $values = [])
     {
         return Query::create($statement, $values);
     }
 
     /**
-     * Adds the entity
+     * Get the last inserted ID
      *
-     * @param Entity $entity
-     * @throws IncorrectQueryException
+     * @return string
      */
-    public function add(Entity $entity)
+    public static function lastInsertId()
     {
-        $this->newQuery()
-            ->insertInto(static::$table)
-            ->values($entity)
-            ->execute();
+        return DB::get()->lastInsertId();
     }
 
     /**
@@ -148,7 +148,7 @@ abstract class Model
      * @throws IncorrectQueryException
      * @throws UnknownPropertyException
      */
-    public function delete(Entity $entity)
+    public static function delete(Entity $entity)
     {
         $primaries = $entity->getPrimaryKeys();
         $conditions = '';
@@ -165,7 +165,7 @@ abstract class Model
             }
         }
 
-        $this->newQuery()
+        Query::create()
             ->delete()
             ->from(static::$table)
             ->where([$conditions])
@@ -187,9 +187,9 @@ abstract class Model
      * @throws EntityException
      * @throws IncorrectQueryException
      */
-    public function get($primary)
+    public static function get($primary)
     {
-        $entity_name = $this->getEntityName();
+        $entity_name = self::getEntityName();
 
         if (!class_exists($entity_name)) {
             throw new EntityException('There is no matching entity ' . $entity_name . 'for this model' . static::class);
@@ -200,7 +200,7 @@ abstract class Model
             $statement['AND'][] = [$index, '=', $item];
         }
 
-        $query = $this->newQuery()
+        $query = Query::create()
             ->select()
             ->from(static::$table)
             ->where([$statement]);
@@ -225,13 +225,13 @@ abstract class Model
      * @return array|null
      * @throws IncorrectQueryException
      */
-    public function all()
+    public static function all()
     {
-        $query = $this->newQuery()
+        $query = Query::create()
             ->select()
             ->from(static::$table);
 
-        $entity_name = $this->getEntityName();
+        $entity_name = self::getEntityName();
 
         return DB::get()->query($query, $entity_name);
     }
