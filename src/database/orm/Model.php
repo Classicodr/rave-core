@@ -203,7 +203,7 @@ abstract class Model
         $query = Query::create()
             ->select()
             ->from(static::$table)
-            ->where([$statement]);
+            ->where($statement);
 
         return DB::get()->queryOne($query, $entity_name);
     }
