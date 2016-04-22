@@ -475,15 +475,16 @@ class Query
     {
         $count = 0;
         $append = null;
+        $parameters = preg_replace('#[^a-zA-Z0-9_]#', '_', $conditions[0]);
 
-        while (isset($this->values[':' . $conditions[0] . $append])) {
+        while (isset($this->values[':' . $parameters . $append])) {
             $append = $count;
             ++$count;
         }
 
-        $this->values[':' . $conditions[0] . $append] = $conditions[2];
+        $this->values[':' . $parameters . $append] = $conditions[2];
 
-        return $conditions[0] . ' ' . $conditions[1] . ' :' . $conditions[0] . $append;
+        return $conditions[0] . ' ' . $conditions[1] . ' :' . $parameters . $append;
     }
 
     /**
