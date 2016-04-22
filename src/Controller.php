@@ -64,6 +64,7 @@ abstract class Controller
     {
         if (!empty($data) || !empty($this->data)) {
             extract(array_merge($this->data, $data));
+            unset($this->data, $data);
         }
 
         $controller = explode('\\', static::class);
