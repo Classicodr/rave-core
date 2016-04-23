@@ -95,9 +95,7 @@ abstract class Model
         Query::create()
             ->update(static::$table)
             ->set($entity)
-            ->where([
-                'conditions' => $conditions,
-            ])
+            ->where($conditions)
             ->execute();
     }
 
