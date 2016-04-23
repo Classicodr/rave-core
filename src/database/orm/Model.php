@@ -166,7 +166,7 @@ abstract class Model
         Query::create()
             ->delete()
             ->from(static::$table)
-            ->where([$conditions])
+            ->where($conditions)
             ->execute();
     }
 
