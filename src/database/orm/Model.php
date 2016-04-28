@@ -233,4 +233,17 @@ abstract class Model
 
         return DB::get()->query($query, $entity_name);
     }
+
+    /**
+     * Return the number of rows
+     *
+     * @return int|null
+     * @throws IncorrectQueryException
+     */
+    public static function count()
+    {
+        $query = self::newQuery()->select('COUNT(*) as count')->from(static::$table)->first();
+
+        return $query ? $query->count : null;
+    }
 }
